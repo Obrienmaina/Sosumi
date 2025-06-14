@@ -1,6 +1,19 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
-export const ConnectDB = async()=>{
-    await mongoose.connect('mongodb+srv://sossumi:<wv53rW8fwO0Ysv5u>@cluster0.8yfsgki.mongodb.net/sosumi-blog')
-    console.log("DB Connected")
-}
+const connectDB = async () => {
+  try {
+    await mongoose.connect(
+      'mongodb+srv://sossumi:BkanRKrXmH7ToEFo@cluster0.8yfsgki.mongodb.net/sosumi-blog?retryWrites=true&w=majority&appName=Cluster0',
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }
+    );
+    console.log('Connected to MongoDB Atlas (sosumi-blog)');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
