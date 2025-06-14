@@ -1,9 +1,14 @@
+// Lib/config/db.js
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
+    // Add this log for debugging to confirm the value is picked up
+    console.log('DB_CONNECTION_STRING (from db.js):', process.env.DB_CONNECTION_STRING);
+
+   
     await mongoose.connect(
-      'mongodb+srv://sossumi:BkanRKrXmH7ToEFo@cluster0.8yfsgki.mongodb.net/sosumi-blog?retryWrites=true&w=majority&appName=Cluster0',
+      process.env.DB_CONNECTION_STRING, 
       {
         useNewUrlParser: true,
         useUnifiedTopology: true,
