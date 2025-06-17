@@ -2,7 +2,7 @@ import connectDB from "../../../Lib/config/db";
 import { NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 // Import all your Mongoose models from your consolidated models file
-import { BlogPost, Comment, Bookmark, Like, Category, User } from "../../../Lib/models/blogmodel"; 
+import { BlogPost, Comment, Bookmark, Like, Category, User } from "../../../Lib/models/BlogModel"; 
 import bcrypt from 'bcryptjs'; // For password hashing
 
 // Load the database connection once when the module is initialized
