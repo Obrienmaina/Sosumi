@@ -9,7 +9,7 @@ const BlogItem = ({ image, title, description, link }) => {
       <p className="text-sm text-gray-700 mb-4">{description}</p>
       <a
         href={link}
-        className="text-blue-500 hover:underline"
+        className="text-[#007BFF] hover:underline"
       >
         Read More
       </a>
@@ -21,7 +21,7 @@ BlogItem.propTypes = {
   image: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
-  link: PropTypes.string.isRequired, // Add link prop validation
+  link: PropTypes.string.isRequired,
 };
 
 export default BlogItem;

@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const Header = () => {
   return (
@@ -19,23 +20,23 @@ const Header = () => {
       <div className="text-center my-12">
         <h1 className="text-3xl sm:text-5xl font-medium">Welcome to Sosumi</h1>
         <p className="text-lg text-gray-700 leading-relaxed mt-4 mb-8 max-w-xl mx-auto">
-        Discover insights, opinions, and stories from our latest blog entries. Whether you’re here to learn, explore, or simply get inspired — there’s something for everyone.
+          Discover insights, opinions, and stories from our latest blog entries. Whether you’re here to learn, explore, or simply get inspired — there’s something for everyone.
         </p>
 
         {/* Buttons below the text */}
         <div className="flex justify-center gap-6">
-          <button className="flex items-center gap-2 font-medium py-2 px-6 border border-black">
+          <Link
+            href="/login"
+            className="flex items-center gap-2 font-medium py-2 px-6 border border-[#007BFF] text-[#007BFF] hover:bg-[#007BFF] hover:text-white"
+          >
             Log in
-          </button>
-          <button className="flex items-center gap-2 font-medium py-2 px-6 bg-black text-white">
+          </Link>
+          <Link
+            href="/signup"
+            className="flex items-center gap-2 font-medium py-2 px-6 bg-[#FFD700] text-black hover:bg-[#FFC107]"
+          >
             Sign up
-          </button>
-          <form className='flex justfy-between max-w-[500px] scale-75 sm:scale-100'>
-            <input type="email" placeholder="Enter your email" className="border border-gray-300 rounded-l px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <button type="subscribe" className="bg-blue-500 text-white rounded-r px-4 py-2 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              Subscribe
-            </button>
-          </form>
+          </Link>
         </div>
       </div>
     </div>
