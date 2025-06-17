@@ -1,74 +1,89 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
-const Schema = new mongoose.Schema({
-    BlogPost: {
-  _id: ObjectId, // Unique identifier for the blog post
-  title: String, // Title of the blog post 
-  content: String, // The main content of the post, likely rich text HTML 
-  author: ObjectId, // Reference to the User who created the post 
-  tags: [String], // Array of tags for better organization and discoverability 
-  category: String, // Category of the post (e.g., Technology, Travel) 
-  featuredImageUrl: String, // URL to the featured image for the post 
-  createdAt: Date, // Timestamp of post creation
-  updatedAt: Date, // Timestamp of last update
-  isDraft: Boolean, // Indicates if the post is a draft or published 
-  uniqueUrlPath: String, // Unique URL path for the post 
-  // For 'extra' features:
-  likesCount: Number, // Number of likes or ratings 
-  commentsCount: Number, // Number of comments
-  isLiked: Boolean,
-  isBookmarked: Boolean
-},
+// 1. BlogPost Schema (from your simpler, second example)
+const blogPostSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  category: { // Stored as a simple string, not an ObjectId reference
+    type: String,
+    required: true
+  },
+  author: { // Stored as a simple string (author's name), not an ObjectId reference
+    type: String,
+    required: true
+  },
+  image: {
+    type: String,
+    required: true
+  },
+  authorImg: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    default: Date.now // Use Date.now for a function that runs on creation
+  }
+});
 
-Comment: {
-  _id: ObjectId, // Unique identifier for the comment
-  postId: ObjectId, // Reference to the BlogPost the comment belongs to 
-  userId: ObjectId, // Reference to the User who made the comment 
-  content: String, // The text content of the comment
-  createdAt: {type: Date,
-            default: Date.now()
-  } // Timestamp of comment creation
-},
+// 2. Comment Schema (Simplified, but referencing BlogPost and User IDs)
+const commentSchema = new mongoose.Schema({
+  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
 
-Bookmark: {
-  _id: ObjectId, // Unique identifier for the bookmark
-  userId: ObjectId, // Reference to the User who bookmarked the post 
-  postId: ObjectId, // Reference to the BlogPost that was bookmarked 
-  bookmarkedAt: {type: Date,
-            default: Date.now()
-  } // Timestamp of when the post was bookmarked
-},
+// 3. Bookmark Schema (Simplified, but referencing BlogPost and User IDs)
+const bookmarkSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
+  bookmarkedAt: { type: Date, default: Date.now },
+});
 
-Likes: {
-  _id: ObjectId, // Unique identifier for the Likes
-  postId: ObjectId, // Reference to the BlogPost that was liked
-  likedAt: {type: Date,
-            default: Date.now()
-  } // Timestamp of when the post was liked
-},
+// 4. Like Schema (Simplified, but referencing BlogPost and User IDs)
+const likeSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
+  likedAt: { type: Date, default: Date.now },
+});
 
-Category: {
-  _id: ObjectId, // Unique identifier for the Likes
-  postId: ObjectId, // Reference to the BlogPost that was liked
-  categoryAt: {type: Date,
-            default: Date.now()
-  } // Timestamp of when the post was liked
-},
+// 5. Category Schema (Simplified)
+const categorySchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now },
+});
 
+// 6. User Schema (Simplified)
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true }, // Store hashed password
+  bio: String, // Optional
+  profilePictureUrl: String, // Optional
+  registeredAt: { type: Date, default: Date.now },
+});
 
-User: {
-  _id: ObjectId, // Unique identifier for the user
-  username: String, // Publicly displayed username 
-  email: String, // For login and notifications 
-  passwordHash: String, // Hashed password for secure login 
-  bio: String, // User's public biography 
-  profilePictureUrl: String, // URL to the user's profile picture 
-  registeredAt: {type: Date,
-            default: Date.now()
-  } // Timestamp of user registration
-  // For 'extra' feature:
-}
-})
+// Create models (using the safe compilation pattern for hot-reloading environments)
+const BlogPost = mongoose.models.BlogPost || mongoose.model('BlogPost', blogPostSchema);
+const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema);
+const Bookmark = mongoose.models.Bookmark || mongoose.model('Bookmark', bookmarkSchema);
+const Like = mongoose.models.Like || mongoose.model('Like', likeSchema);
+const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-const BlogModel = mongoose.models.blog || mongoose.model('blog', Schema)
-export default BlogModel
+// Export models
+module.exports = {
+  BlogPost,
+  Comment,
+  Bookmark,
+  Like,
+  Category,
+  User,
+};
