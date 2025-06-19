@@ -13,6 +13,8 @@ const page = () => {
     setBlogs(response.data.blogs);
   }
 
+ 
+
   const deleteBlog = async (mongoId) => {
     const response = await axios.delete('/api/blog',{
       params:{
