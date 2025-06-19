@@ -4,6 +4,8 @@ import { writeFile } from "fs/promises";
 // Import all your Mongoose models from your consolidated models file
 import { BlogPost, Comment, Bookmark, Like, Category, User } from "../../../Lib/models/BlogModel"; 
 import bcrypt from 'bcryptjs'; // For password hashing
+const fs = require('fs')
+
 
 // Load the database connection once when the module is initialized
 const loadDB = async () => {
@@ -189,4 +191,15 @@ export async function POST(request) {
         // Generic error response
         return NextResponse.json({ success: false, msg: "Internal Server Error", error: error.message }, { status: 500 });
     }
+}
+
+
+
+// Creating API Endpoint to delete Blog
+export async function DELETE(request){
+    const id = await request.nextURL.searchParams.get('id');
+    const blog = await BlogModel.findById(id);
+    fs.unlink(`./public${blog.image}`, ()=>{})
+    await BlogModel.findByIdAndDelete(id);
+    return NextResponse.json({msg: "Blog Deleted"})
 }
