@@ -37,6 +37,7 @@ const Header = () => {
           >
             Sign up
           </Link>
+          
         </div>
       </div>
     </div>

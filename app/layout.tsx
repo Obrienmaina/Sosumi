@@ -18,10 +18,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={montserrat.className}>
+      <body className={`${montserrat.className} bg-gray-100`}>
         <Header />
-        {children}
-        <Footer /> {/* Add Footer component */}
+        <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

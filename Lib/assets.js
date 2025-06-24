@@ -2,6 +2,7 @@ export const blog_data = [
     {
       id: 1,
       title: "A Detailed Step-by-Step Guide to Manage Your Lifestyle",
+      slug: "detailed-lifestyle-guide",
       description: "How to retire early",
       image: "/images/photo1.png", // Correct path
       date: new Date().toISOString(),
@@ -12,6 +13,7 @@ export const blog_data = [
     {
       id: 2,
       title: "10 Simple Habits to Improve Your Mental Health",
+      slug: "mental-health-habits", // Unique slug
       description: "Practical strategies for everyday calm",
       image: "/images/photo2.png", // Correct path
       date: new Date().toISOString(),
