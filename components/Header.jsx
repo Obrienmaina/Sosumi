@@ -27,13 +27,13 @@ const Header = () => {
         <div className="flex justify-center gap-6">
           <Link
             href="/login"
-            className="flex items-center gap-2 font-medium py-2 px-6 border border-[#007BFF] text-[#007BFF] hover:bg-[#007BFF] hover:text-white"
+            className="flex items-center gap-2 font-medium py-2 px-6 border bg-[#5936BB] text-white hover:bg-[#8764E8] hover:text-white rounded-full"
           >
             Log in
           </Link>
           <Link
             href="/signup"
-            className="flex items-center gap-2 font-medium py-2 px-6 bg-[#FFD700] text-black hover:bg-[#FFC107]"
+            className="flex items-center gap-2 font-medium py-2 px-6 bg-[#5936BB] text-white hover:bg-[#8764E8] rounded-full"
           >
             Sign up
           </Link>
