@@ -1,36 +1,48 @@
-import React from 'react';
+'use client'; // Ensure it's a client component if using useEffect/useState
+
+import React, { useState, useEffect } from 'react';
 
 const Footer = () => {
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    // This ensures the year is always rendered client-side and matches the client's time
+    setCurrentYear(new Date().getFullYear());
+  }, []); // Empty dependency array means this runs once on client mount
+
   return (
-    <footer className="bg-gray-800 text-white py-6">
+    <footer className="bg-[#57597F] text-white py-6">
       <div className="container mx-auto text-center">
         <p className="text-sm">
-          © {new Date().getFullYear()} Sosumi Blog. All rights reserved.
+          © {currentYear} Sosumi Blog. All rights reserved.
         </p>
-        <div className="flex justify-center gap-4 mt-4">
+        <div className="flex justify-center gap-4 mt-4 text-2xl">
           <a
-            href="https://twitter.com"
+            href="https://x.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-400 hover:underline"
+            className="text-white hover:text-gray-300 transition-colors"
+            aria-label="X (formerly Twitter)"
           >
-            Twitter
+            <i className="fa-brands fa-x-twitter"></i>
           </a>
           <a
             href="https://facebook.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
+            className="text-white hover:text-blue-500 transition-colors"
+            aria-label="Facebook"
           >
-            Facebook
+            <i className="fab fa-facebook"></i>
           </a>
           <a
             href="https://instagram.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-pink-500 hover:underline"
+            className="text-white hover:text-pink-400 transition-colors"
+            aria-label="Instagram"
           >
-            Instagram
+            <i className="fab fa-instagram"></i>
           </a>
         </div>
       </div>
