@@ -431,14 +431,14 @@ const ProfileCompletionPage = () => {
           <div className="md:col-span-2 flex justify-center gap-4 mt-8">
             <button
               type="submit"
-              className="px-6 py-3 bg-[#5936BB] text-white font-medium rounded-md hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-lg transition-colors"
+              className="px-6 py-3 bg-[#5936BB] text-white font-medium rounded-full hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-lg transition-colors"
               disabled={loading}
             >
               {loading ? 'Saving Profile...' : 'Save Profile'}
             </button>
             <button
               type="button"
-              className="px-6 py-3 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-lg transition-colors"
+              className="px-6 py-3 bg-red-500 text-white font-medium rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-lg transition-colors"
               // onClick={handleDeleteProfile} // Implement delete profile logic if needed
             >
               Delete Profile
@@ -446,7 +446,7 @@ const ProfileCompletionPage = () => {
             <button
               type="button"
               onClick={() => router.push('/profile')}
-              className="px-6 py-3 bg-gray-300 text-gray-800 font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 text-lg transition-colors"
+              className="px-6 py-3 bg-gray-300 text-gray-800 font-medium rounded-full hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 text-lg transition-colors"
             >
               Cancel
             </button>

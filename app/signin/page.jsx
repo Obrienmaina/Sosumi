@@ -115,7 +115,7 @@ const SignInPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 bg-[#5936BB] text-white font-medium rounded-md hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-lg transition-colors"
+              className="w-full sm:w-auto px-6 py-3 bg-[#5936BB] text-white font-medium rounded-full hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-lg transition-colors"
               disabled={loading}
             >
               {loading ? 'Signing In...' : 'Sign In'}

@@ -193,7 +193,7 @@ const ProfilePage = () => {
         <div className="mt-8 text-center">
             <button
                 onClick={handleLogout}
-                className="px-6 py-3 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-lg transition-colors"
+                className="px-6 py-3 bg-red-500 text-white font-medium rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-lg transition-colors"
                 disabled={loading}
             >
                 {loading ? 'Logging Out...' : 'Logout'}
