@@ -18,6 +18,8 @@ const BlogPage = ({ params }) => {
     );
   }
 
+
+
   // Filter blogs based on the selected category
   
   const filteredBlogs = selectedCategory === "All"
@@ -25,6 +27,8 @@ const BlogPage = ({ params }) => {
     : blog_data.filter((blog) => blog.category === selectedCategory);
 
   return (
+
+    
     <div className="p-8">
       {/* Category Filter */}
       <div className="mb-8 flex flex-wrap gap-4">

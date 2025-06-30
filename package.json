@@ -11,17 +11,24 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
+    "cookies-next": "^6.0.0",
     "dotenv": "^16.5.0",
     "install": "^0.13.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
     "next": "15.3.3",
+    "nodemailer": "^7.0.4",
     "npm": "^11.4.2",
+    "passport": "^0.7.0",
+    "passport-google-oauth2": "^0.2.0",
+    "passport-google-oauth20": "^2.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
     "react-toastify": "^11.0.5"
   },
   "devDependencies": {
-   
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
