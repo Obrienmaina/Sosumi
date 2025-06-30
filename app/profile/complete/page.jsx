@@ -287,7 +287,7 @@ const ProfileCompletionPage = () => {
               ></textarea>
               <button
                 type="button"
-                className="mt-4 px-6 py-2 bg-[#5936BB] text-white font-medium rounded-md hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-base transition-colors"
+                className="mt-4 px-6 py-2 bg-[#5936BB] text-white font-medium rounded-full hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-base transition-colors"
               >
                 Update Interests
               </button>
