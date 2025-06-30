@@ -19,6 +19,7 @@ const BlogPage = ({ params }) => {
   }
 
   // Filter blogs based on the selected category
+  
   const filteredBlogs = selectedCategory === "All"
     ? blog_data
     : blog_data.filter((blog) => blog.category === selectedCategory);

@@ -146,7 +146,72 @@ Overcommitting is a fast track to burnout. Respect your limits. Boundaries are a
       linkedin: "#",
     },
   },
-  // ... add the other 13 blogs using the same format, each with slug, content, etc.
+  {
+    id: 3,
+    title: "Mastering Your Finances in Your 20s",
+    slug: "master-finances-in-20s",
+    description: "Budgeting, saving, and investing made simple",
+    content: `
+      Your 20s are the perfect time to build habits that will set you up for life. Start by creating a realistic budget that includes saving—even small amounts add up. Build an emergency fund to cover at least 3 months of expenses.
+
+      Understand your income and track where your money goes. Learn about compound interest, and don’t shy away from investing in index funds or retirement accounts. Focus on needs over wants and avoid debt traps like buy-now-pay-later schemes.
+
+      *“Being broke in your 20s is normal. Staying broke because you never planned is not.”*
+    `,
+    image: "/images/photo3.png",
+    date: "2025-06-24T12:00:00.000Z",
+    category: "Finance",
+    author: "Leo Matovu",
+    author_img: "/images/profile_icon_3.png",
+    socials: {
+      twitter: "https://twitter.com/leomatovu",
+      linkedin: "https://linkedin.com/in/leomatovu"
+    }
+  },
+  {
+    id: 6,
+    title: "Traveling on a Budget: Secrets from a Pro",
+    slug: "budget-travel-secrets",
+    description: "Explore the world without draining your savings",
+    content: `
+      Budget travel is less about sacrifice and more about strategy. Book flights early, use price alerts, and travel during shoulder seasons. Opt for hostels, shared Airbnbs, or overnight buses to save on accommodation and transit.
+
+      Use local apps for food, transport, and cultural events. Travel light to avoid baggage fees. And remember, slow travel is not only cheaper—it’s also more fulfilling.
+
+      *“A tight budget isn’t a barrier. It’s a creative challenge.”*
+    `,
+    image: "/images/photo6.png",
+    date: "2025-06-24T12:00:00.000Z",
+    category: "Travel",
+    author: "Tariq L.",
+    author_img: "/images/profile_icon_6.png",
+    socials: {
+      twitter: "https://twitter.com/tariql",
+      linkedin: "https://linkedin.com/in/tariql"
+    }
+  },
+  {
+    id: 8,
+    title: "How I Built My First App in 30 Days",
+    slug: "first-app-in-30-days",
+    description: "Lessons from a newbie turned full-stack dev",
+    content: `
+      When I set out to build my first app, I had no idea what I was doing. But I set a 30-day deadline and learned as I went. I chose React for the frontend and Firebase for the backend. The key? Start small and iterate.
+
+      I broke down the idea into screens and features, learned from YouTube and docs, and kept pushing updates—even ugly ones. In the end, I had a working MVP.
+
+      *“Code something ugly. Launch it anyway. Perfection comes later.”*
+    `,
+    image: "/images/photo8.png",
+    date: "2025-06-24T12:00:00.000Z",
+    category: "Tech",
+    author: "David Z.",
+    author_img: "/images/profile_icon_8.png",
+    socials: {
+      twitter: "https://twitter.com/davidz",
+      linkedin: "https://linkedin.com/in/davidz"
+    }
+  },
 ];
 
 const BlogPage = () => {
