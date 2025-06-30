@@ -29,49 +29,49 @@ const BlogPage = ({ params }) => {
       {/* Category Filter */}
       <div className="mb-8 flex flex-wrap gap-4">
         <button
-          className={`px-4 py-2 ${selectedCategory === "All" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "All" ? "bg-[#5936BB] text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("All")}
         >
           All
         </button>
         <button
-          className={`px-4 py-2 ${selectedCategory === "Lifestyle" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "Lifestyle" ? "bg-[#5936BB] text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("Lifestyle")}
         >
           Lifestyle
         </button>
         <button
-          className={`px-4 py-2 ${selectedCategory === "Health" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "Health" ? "bg-[#5936BB] text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("Health")}
         >
           Health
         </button>
         <button
-          className={`px-4 py-2 ${selectedCategory === "Finance" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "Finance" ? "bg-[#5936BB] text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("Finance")}
         >
           Finance
         </button>
         <button
-          className={`px-4 py-2 ${selectedCategory === "Travel" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "Travel" ? "bg-[#5936BB] text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("Travel")}
         >
           Travel
         </button>
         <button
-          className={`px-4 py-2 ${selectedCategory === "Tech" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "Tech" ? "bg-[#5936BB] text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("Tech")}
         >
           Tech
         </button>
         <button
-          className={`px-4 py-2 ${selectedCategory === "Productivity" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "Productivity" ? "bg-[#5936BB]text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("Productivity")}
         >
           Productivity
         </button>
         <button
-          className={`px-4 py-2 ${selectedCategory === "Media" ? "bg-black text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded-full ${selectedCategory === "Media" ? "bg-[#5936BB] text-white" : "bg-gray-200"}`}
           onClick={() => setSelectedCategory("Media")}
         >
           Media
