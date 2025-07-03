@@ -2,7 +2,7 @@
 import connectDB from "../../../Lib/config/db";
 import { NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
-import { BlogPost, Comment, Bookmark, Like, Category, User } from "../../../Lib/models/BlogModel";
+import { BlogPost, Comment, Bookmark, Like, Category, User } from "../../../Lib/models/blogmodel";
 import bcrypt from 'bcryptjs';
 import fs from 'fs'; // Use import for fs if using ES modules consistently
 import jwt from 'jsonwebtoken'; // For token verification

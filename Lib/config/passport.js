@@ -1,6 +1,6 @@
 import passport from "passport";
 import {Strategy as GoogleStrategy} from 'passport-google-oauth2';
-import { User } from "../models/BlogModel"; 
+import { User } from "../models/blogmodel"; 
 import jwt from 'jsonwebtoken'
 
 passport.use(

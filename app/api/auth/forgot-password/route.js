@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto'; // Node.js built-in module for token generation
 import nodemailer from 'nodemailer'; // For sending emails
 import connectDB from '../../../../Lib/config/db';
-import { User } from '../../../../Lib/models/BlogModel';
+import { User } from '../../../../Lib/models/blogmodel';
 
 export async function POST(request) {
   await connectDB();

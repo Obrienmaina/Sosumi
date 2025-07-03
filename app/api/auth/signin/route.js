@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User } from '../../../../Lib/models/BlogModel'; // Adjust path
+import { User } from '../../../../Lib/models/blogmodel'; // Adjust path
 import connectDB from '../../../../Lib/config/db'; // Adjust path
 import { setCookie } from 'cookies-next'; // For setting HTTP-only cookie
 

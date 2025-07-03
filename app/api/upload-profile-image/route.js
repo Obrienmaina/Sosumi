@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import connectDB from '../../../Lib/config/db'; // Adjust path as needed
-import { User } from '../../../Lib/models/BlogModel'; // Adjust path as needed
+import { User } from '../../../Lib/models/blogmodel'; // Adjust path as needed
 import { v2 as cloudinary } from 'cloudinary'; // Import Cloudinary SDK
 
 // Configure Cloudinary
