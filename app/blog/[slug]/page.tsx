@@ -139,16 +139,35 @@ export const blog_data = [
 const FullBlogPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const router = useRouter();
   const [blog, setBlog] = useState<typeof blog_data[0] | null>(null);
+  const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
     const fetchParams = async () => {
       const resolvedParams = await params; // Unwrap the params Promise
       const foundBlog = blog_data.find((b) => b.slug === resolvedParams.slug);
       setBlog(foundBlog || null);
+
+      // Check if the blog is already bookmarked
+      const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+      setBookmarked(bookmarks.includes(resolvedParams.slug));
     };
 
     fetchParams();
   }, [params]);
+
+  const handleBookmark = () => {
+    const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+    if (bookmarked) {
+      // Remove bookmark
+      const updatedBookmarks = bookmarks.filter((savedSlug: string) => savedSlug !== blog?.slug);
+      localStorage.setItem("bookmarks", JSON.stringify(updatedBookmarks));
+      setBookmarked(false);
+    } else {
+      // Add bookmark
+      localStorage.setItem("bookmarks", JSON.stringify([...bookmarks, blog?.slug]));
+      setBookmarked(true);
+    }
+  };
 
   // Handle case where blog is not found
   if (!blog) {
@@ -206,17 +225,27 @@ const FullBlogPage = ({ params }: { params: Promise<{ slug: string }> }) => {
           dangerouslySetInnerHTML={{ __html: blog.content }}
         ></div>
 
+        {/* Bookmark Button */}
+        <button
+          onClick={handleBookmark}
+          className={`mt-8 px-4 py-2 rounded-md ${
+            bookmarked ? "bg-purple-500 text-white" : "bg-orange-500 text-white"
+          } hover:bg-purple-600 transition-colors`}
+        >
+          {bookmarked ? "Bookmarked" : "Bookmark"}
+        </button>
+
         {/* Social Media Sharing Buttons */}
         <div className="mt-8 flex gap-4">
           <button
             onClick={() => handleShare("twitter")}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
           >
             Share on Twitter
           </button>
           <button
             onClick={() => handleShare("facebook")}
-            className="px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
+            className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
           >
             Share on Facebook
           </button>
@@ -224,7 +253,7 @@ const FullBlogPage = ({ params }: { params: Promise<{ slug: string }> }) => {
 
         <button
           onClick={() => router.push("/blog")}
-          className="mt-8 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+          className="mt-8 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
         >
           Back to Blogs
         </button>
