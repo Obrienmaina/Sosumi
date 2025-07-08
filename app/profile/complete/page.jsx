@@ -2,35 +2,40 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { LuPencil } from 'react-icons/lu';
 
-const ProfileCompletionPage = () => {
+const ProfilePage = () => {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 flex justify-center items-center">
-      <div className="bg-white p-8 md:p-12 rounded-lg shadow-xl w-full max-w-3xl">
-        <h1 className="text-4xl font-semibold mb-8 text-gray-800 text-center">User Profile</h1>
+    <div className="p-8">
+      <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
+      <p className="text-gray-700 mb-4">
+        Manage your profile settings, update your bio, and access admin tools.
+      </p>
 
-        {/* Existing Profile Information */}
+      {/* Profile Actions */}
+      <div className="flex gap-4">
+        {/* Edit Profile Button */}
+        <Link
+          href="/profile/edit"
+          className="ml-4 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <LuPencil className="w-5 h-5 mr-1" />
+          <span className="text-sm font-medium">Edit Profile</span>
+        </Link>
 
-        {/* Add Blog and Edit Drafts Buttons */}
-        <div className="mt-12 flex justify-center gap-4">
-          <button
-            onClick={() => router.push('/admin/addBlog')}
-            className="px-6 py-3 bg-[#5936BB] text-white font-medium rounded-full hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-lg transition-colors"
-          >
-            Add Blog
-          </button>
-          <button
-            onClick={() => router.push('/admin/editDrafts')}
-            className="px-6 py-3 bg-[#FF5733] text-white font-medium rounded-full hover:bg-[#E94E2E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF5733] text-lg transition-colors"
-          >
-            Edit Drafts
-          </button>
-        </div>
+        {/* Admin Page Button */}
+        <button
+          onClick={() => router.push("/admin")}
+          className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
+        >
+          Admin Page
+        </button>
       </div>
     </div>
   );
 };
 
-export default ProfileCompletionPage;
+export default ProfilePage;
