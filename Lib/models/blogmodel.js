@@ -1,115 +1,193 @@
-import mongoose from 'mongoose';
+// Lib/models/blogmodel.js
+// This file defines all Mongoose schemas and models for the blog application.
 
-// 1. BlogPost Schema
+import mongoose from 'mongoose'; // Use import for ES Modules
+
+// 1. User Schema
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    unique: true, // Ensure username is unique if provided
+    sparse: true, // Allows multiple documents to have a null username
+    default: null
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true, // Email must be unique
+    lowercase: true, // Store emails in lowercase
+    trim: true, // Trim whitespace
+  },
+  passwordHash: { // Stores hashed password for traditional logins
+    type: String,
+    default: null
+  },
+  name: { type: String, trim: true }, // Full name (e.g., from Google profile)
+  firstName: { type: String, trim: true },
+  lastName: { type: String, trim: true },
+  country: { type: String, trim: true },
+  agreedToTerms: { type: Boolean, default: false },
+  accessToken: { type: String, default: null }, // Google OAuth access token
+  tokens: [{ type: String }], // Array to store active JWTs for sessions
+  bio: { type: String, default: '', maxlength: 500 }, // User biography
+  profilePictureUrl: { type: String, default: null }, // URL to profile image (Cloudinary)
+  registeredAt: { type: Date, default: Date.now },
+  resetPasswordToken: { type: String, default: null },
+  resetPasswordExpires: { type: Date, default: null },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Rather not say', null], // Enum for predefined options
+    default: null
+  },
+  homepageUrl: { type: String, default: null, trim: true },
+  company: { type: String, default: null, trim: true },
+  city: { type: String, default: null, trim: true },
+  interests: { type: [String], default: [] }, // Changed to array of strings for interests
+  role: {
+    type: String,
+    enum: ['user', 'admin'], // Define roles for authorization
+    default: 'user',
+  },
+}, { timestamps: true }); // Adds createdAt and updatedAt automatically
+
+// 2. BlogPost Schema
 const blogPostSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
   },
-  description: {
+  slug: { // Unique URL-friendly identifier for the blog post
     type: String,
-    required: true
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  description: { // Short summary
+    type: String,
+    required: true,
+    trim: true,
+  },
+  content: { // Full content (can be HTML from Draft.js)
+    type: String,
+    required: true,
   },
   category: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
   },
-  author: {
+  authorId: { // Reference to the User who authored the post
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  author: { // Denormalized author name for quick display (optional, can be populated)
     type: String,
-    required: true
+    required: true,
+    trim: true,
   },
-  image: {
+  authorImg: { // Denormalized author image for quick display (optional, can be populated)
     type: String,
-    required: true
+    required: true,
   },
-  authorImg: {
+  thumbnail: { // URL to the main image for the blog post (Cloudinary URL)
     type: String,
-    required: true
+    required: true, // Make required if every blog must have a thumbnail
   },
-  date: {
+  date: { // Publication date
     type: Date,
-    default: Date.now
+    default: Date.now,
+  },
+  isPublished: { // For draft functionality
+    type: Boolean,
+    default: true,
+  },
+  likesCount: { // Denormalized count of likes
+    type: Number,
+    default: 0,
+  },
+  commentsCount: { // Denormalized count of comments
+    type: Number,
+    default: 0,
+  },
+  views: { // Optional: for popularity sorting
+    type: Number,
+    default: 0,
   }
-});
+}, { timestamps: true }); // Adds createdAt and updatedAt automatically
 
-// 2. Comment Schema
+// 3. Comment Schema
 const commentSchema = new mongoose.Schema({
-  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+  postId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BlogPost',
+    required: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  // No need for createdAt here if timestamps: true is used
+}, { timestamps: true });
 
-// 3. Bookmark Schema
+// 4. Bookmark Schema
 const bookmarkSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
-  bookmarkedAt: { type: Date, default: Date.now },
-});
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  postId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BlogPost',
+    required: true
+  },
+  // No need for bookmarkedAt here if timestamps: true is used
+}, { timestamps: true });
 
-// 4. Like Schema
+// 5. Like Schema
 const likeSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
-  likedAt: { type: Date, default: Date.now },
-});
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  postId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BlogPost',
+    required: true
+  },
+  // No need for likedAt here if timestamps: true is used
+}, { timestamps: true });
 
-// 5. Category Schema
+// 6. Category Schema
 const categorySchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now },
-});
+  name: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+  // No need for createdAt here if timestamps: true is used
+}, { timestamps: true });
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true, sparse: true, default: null },
-  email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, default: null },
-  name: { type: String },
-  firstName: { type: String },
-  lastName: { type: String },
-  country: { type: String },
-  agreedToTerms: { type: Boolean, default: false },
-  accessToken: { type: String },
-  tokens: [{ type: String }],
-  bio: { type: String, default: '' }, // Define once
-  profilePictureUrl: { type: String, default: null }, // Define once
-  registeredAt: { type: Date, default: Date.now },
-  resetPasswordToken: { type: String },
-  resetPasswordExpires: { type: Date },
-  // Add other new fields here if they are not already present:
-  gender: { type: String, enum: ['Male', 'Female', 'Rather not say', null], default: null },
-  homepageUrl: { type: String, default: null },
-  company: { type: String, default: null },
-  city: { type: String, default: null },
-  interests: { type: String, default: '' },
-});
-
-// 6. Notification Schema
-const notificationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
-  type: { type: String, enum: ['like', 'comment'], required: true }, // Type of notification
-  message: { type: String, required: true }, // Notification message
-  createdAt: { type: Date, default: Date.now },
-  read: { type: Boolean, default: false }, // Whether the notification has been read
-});
 
 // Create models (using the safe compilation pattern)
-const BlogPost = mongoose.models.BlogPost || mongoose.model('BlogPost', blogPostSchema);
-const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema);
-const Bookmark = mongoose.models.Bookmark || mongoose.model('Bookmark', bookmarkSchema);
-const Like = mongoose.models.Like || mongoose.model('Like', likeSchema);
-const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
-const User = mongoose.models.User || mongoose.model('User', userSchema);
-const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
+// This prevents Mongoose from trying to recompile models if they already exist.
+export const User = mongoose.models.User || mongoose.model('User', userSchema);
+export const BlogPost = mongoose.models.BlogPost || mongoose.model('BlogPost', blogPostSchema);
+export const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema);
+export const Bookmark = mongoose.models.Bookmark || mongoose.model('Bookmark', bookmarkSchema);
+export const Like = mongoose.models.Like || mongoose.model('Like', likeSchema);
+export const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
 
-// Export models
-module.exports = {
-  BlogPost,
-  Comment,
-  Bookmark,
-  Like,
-  Category,
-  User,
-  Notification, // Export Notification model
-};
+// Export all models as named exports
+// module.exports = { ... } is for CommonJS. Use export for ES Modules.
