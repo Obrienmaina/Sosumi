@@ -1,24 +1,24 @@
+// app/signin/page.jsx
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // For programmatic navigation
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 const SignInPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const router = useRouter();
 
   const handleTraditionalSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
-      const response = await fetch('/api/auth/signin', { // Your new login API route
+      const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,25 +26,29 @@ const SignInPage = () => {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed. Please check your credentials.');
+        toast.error(data.message || 'Login failed. Please check your credentials.');
+        throw new Error(data.message || 'Login failed. Please check your credentials.');
       }
 
-      const data = await response.json();
+      toast.success(data.message || 'Login successful!');
       console.log('Login successful:', data.message);
-      router.push('/profile'); // Redirect to profile page on successful login
+      router.push('/profile');
 
     } catch (err) {
       console.error('Traditional Sign-in Error:', err);
-      setError(err.message || 'An unexpected error occurred during login.');
+      if (!err.message.includes("Login failed") && !err.message.includes("credentials")) {
+          toast.error(err.message || 'An unexpected error occurred during login.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Google Sign-in handler (same as on signup page)
   const handleGoogleSignIn = () => {
+    // CORRECTED: Path to Google OAuth initiation API route
     window.location.href = "/api/google";
   };
 
@@ -53,7 +57,6 @@ const SignInPage = () => {
       <div className="bg-white p-8 md:p-12 rounded-lg shadow-xl w-full max-w-md">
         <h1 className="text-4xl font-semibold mb-8 text-gray-800 text-center">Sign In</h1>
 
-        {/* Google Sign-in Button */}
         <button
           type="button"
           onClick={handleGoogleSignIn}
@@ -71,13 +74,8 @@ const SignInPage = () => {
         </button>
 
         <form onSubmit={handleTraditionalSignIn}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
+          {/* Removed direct error div, toast will handle notifications */}
 
-          {/* Email */}
           <div className="mb-6">
             <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">
               Email
@@ -94,7 +92,6 @@ const SignInPage = () => {
             />
           </div>
 
-          {/* Password */}
           <div className="mb-6">
             <label htmlFor="password" className="block text-lg font-medium text-gray-700 mb-2">
               Password
@@ -111,7 +108,6 @@ const SignInPage = () => {
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <button
               type="submit"
@@ -128,7 +124,6 @@ const SignInPage = () => {
             </Link>
           </div>
 
-          {/* Don't have an account? Sign up. */}
           <p className="mt-8 text-center text-gray-700 text-base">
             Don't have a Sosumi account?{" "}
             <Link href="/signup" className="text-indigo-600 font-semibold hover:underline">

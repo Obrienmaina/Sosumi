@@ -1,3 +1,4 @@
+// app/components/footer.jsx
 'use client'; // Ensure it's a client component if using useEffect/useState
 
 import React, { useState, useEffect } from 'react';
@@ -11,8 +12,8 @@ const Footer = () => {
   }, []); // Empty dependency array means this runs once on client mount
 
   return (
-    <footer className="bg-[#57597F] text-white py-6">
-      <div className="container mx-auto text-center">
+    <footer className="bg-[#57597F] text-white py-6 mt-auto"> {/* mt-auto pushes footer to bottom */}
+      <div className="container mx-auto px-4 text-center">
         <p className="text-sm">
           © {currentYear} Sosumi Blog. All rights reserved.
         </p>

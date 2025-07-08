@@ -1,14 +1,37 @@
+// app/profile/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LuPencil } from 'react-icons/lu'; // Assuming you have lucide-react for icons
+import axios from 'axios'; // For fetching user data
+import { toast } from 'react-toastify'; // For notifications
+import { TailSpin } from 'react-loader-spinner'; // For loading indicator
+import Image from 'next/image'; // Import Next.js Image component
+import BlogItem from '@/components/BlogItem'; // Assuming you have a BlogItem component
+
+interface BlogPostType {
+  _id: string;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string;
+  date: string;
+  category: string;
+  author: string;
+  authorImg: string;
+  likesCount: number;
+  commentsCount: number;
+  views: number;
+}
 
 const ProfilePage = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null); // State to store user data
+  const [userBlogs, setUserBlogs] = useState<BlogPostType[]>([]); // State for user's blogs
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [blogsLoading, setBlogsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isEditingBio, setIsEditingBio] = useState(false); // New state for inline bio editing
   const [editedBio, setEditedBio] = useState(''); // New state for edited bio content
   const [bioUpdateLoading, setBioUpdateLoading] = useState(false); // Loading state for bio update
@@ -17,54 +40,80 @@ const ProfilePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserProfileAndBlogs = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const res = await fetch('/api/user');
-
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
-            router.push('/signin');
-            return;
-          }
-          throw new Error('Failed to fetch user profile.');
+        // Fetch user data - CORRECTED API PATH
+        const userResponse = await axios.get('/api/auth/user'); // Changed from /api/user to /api/auth/user
+        if (userResponse.data.user) {
+          setUser(userResponse.data.user);
+          // Initialize editedBio with user.bio only if user exists
+          setEditedBio(userResponse.data.user.bio || '');
+        } else {
+          toast.error("Failed to fetch user profile.");
+          setError("Failed to fetch user profile.");
+          setLoading(false);
+          return;
         }
 
-        const data = await res.json();
-        setUser(data.user);
-        setEditedBio(data.user.bio || ''); // Initialize editedBio with current user bio
+        // Fetch user's blogs
+        setBlogsLoading(true);
+        try {
+          const blogsResponse = await axios.get('/api/user/blogs'); // This path is correct as per previous API route
+          if (blogsResponse.data.success) {
+            setUserBlogs(blogsResponse.data.blogs);
+          } else {
+            console.warn("Could not fetch user blogs:", blogsResponse.data.msg);
+            setUserBlogs([]); // Ensure it's an empty array on failure
+          }
+        } catch (blogsErr: any) {
+          console.error("Error fetching user blogs:", blogsErr);
+          if (axios.isAxiosError(blogsErr) && blogsErr.response?.status === 401) {
+            // This is handled by the main user fetch, but good to note.
+          } else {
+            toast.error("An error occurred while fetching your blogs.");
+          }
+          setUserBlogs([]); // Ensure it's an empty array on error
+        } finally {
+          setBlogsLoading(false);
+        }
 
-        // Uncomment this line if you want to enforce profile completion redirect
-        // if (!data.user.firstName || !data.user.lastName || !data.user.country || !data.user.agreedToTerms) {
-        //     console.log('Profile incomplete, redirecting to completion page.');
-        //     router.push('/profile/complete');
-        //     return;
-        // }
-
-      } catch (err) {
+      } catch (err: any) { // Catch axios errors
         console.error('Error fetching user profile:', err);
-        setError('Failed to load profile. Please try logging in again.');
+        if (axios.isAxiosError(err) && err.response && err.response.status === 401) {
+          toast.error("You are not authenticated. Please sign in.");
+          router.push('/signin');
+        } else {
+          toast.error(err.response?.data?.message || 'Failed to load profile. Please try logging in again.');
+          setError(err.response?.data?.message || 'Failed to load profile. Please try logging in again.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserProfile();
+    fetchUserProfileAndBlogs();
   }, [router]);
 
   const handleLogout = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/auth/logout', { method: 'POST' });
-      if (res.ok) {
+      const res = await axios.post('/api/auth/logout'); // Using axios
+      if (res.status === 200) { // Check status code for axios
+        toast.success(res.data.message || 'Logged out successfully!');
         router.push('/signin');
       } else {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Logout failed.');
+        // This block might not be hit if axios throws an error for non-2xx statuses
+        toast.error(res.data.message || 'Logout failed.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Logout error:', err);
-      setError(err.message || 'Error during logout.');
+      if (axios.isAxiosError(err) && err.response) {
+        toast.error(err.response.data.message || 'Error during logout.');
+      } else {
+        toast.error('An unexpected error occurred during logout.');
+      }
     } finally {
       setLoading(false);
     }
@@ -74,24 +123,25 @@ const ProfilePage = () => {
     setBioUpdateLoading(true);
     setBioUpdateError('');
     try {
-      const res = await fetch('/api/user-bio-update', { // New API route for bio update
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bio: editedBio }),
-      });
+      const res = await axios.post('/api/auth/user-bio-data', { bio: editedBio }); // Using axios and correct API path
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to update bio.');
+      if (res.status === 200) { // Check status code for axios
+        // Update the user state with the new bio from the response (if provided)
+        setUser(prevUser => ({ ...prevUser, bio: res.data.user?.bio || editedBio }));
+        setIsEditingBio(false); // Exit editing mode
+        toast.success(res.data.message || 'Bio updated successfully!');
+      } else {
+        toast.error(res.data.message || 'Failed to update bio.');
       }
-
-      // Update the user state with the new bio
-      setUser(prevUser => ({ ...prevUser, bio: editedBio }));
-      setIsEditingBio(false); // Exit editing mode
-      console.log('Bio updated successfully!');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Bio update error:', err);
-      setBioUpdateError(err.message || 'An error occurred while updating bio.');
+      if (axios.isAxiosError(err) && err.response) {
+        setBioUpdateError(err.response.data.message || 'An error occurred while updating bio.');
+        toast.error(err.response.data.message || 'An error occurred while updating bio.');
+      } else {
+        setBioUpdateError('An unexpected error occurred while updating bio.');
+        toast.error('An unexpected error occurred while updating bio.');
+      }
     } finally {
       setBioUpdateLoading(false);
     }
@@ -99,36 +149,35 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <p className="text-xl text-gray-700">Loading profile...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <TailSpin height="80" width="80" color="#4fa94d" ariaLabel="loading" />
+        <p className="ml-4 text-gray-700">Loading profile...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-lg shadow-xl text-center">
-          <p className="text-red-600 text-lg mb-4">{error}</p>
-          <Link href="/signin" className="text-indigo-600 hover:underline">
-            Go to Sign In
-          </Link>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <p className="text-red-500 text-lg mb-4">{error}</p>
+        <Link href="/signin" className="mt-4 px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
+          Go to Sign In
+        </Link>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="min-h-screen flex justify-center items-center bg-gray-50">
         <p className="text-xl text-gray-700">User not loaded. Redirecting...</p>
       </div>
     );
   }
 
   // Helper function to format date
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
@@ -140,11 +189,13 @@ const ProfilePage = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center flex-grow">
             <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 mb-4 md:mb-0 md:mr-6">
               {user.profilePictureUrl ? (
-                <img
+                <Image // Use Next.js Image component
                   src={user.profilePictureUrl}
                   alt="Profile"
+                  width={160} // Set appropriate width
+                  height={160} // Set appropriate height
                   className="w-full h-full object-cover"
-                  onError={(e) => (e.target.src = 'https://placehold.co/160x160/cccccc/333333?text=Profile+Photo')}
+                  onError={(e) => (e.currentTarget.src = 'https://placehold.co/160x160/cccccc/333333?text=Profile+Photo')}
                 />
               ) : (
                 <span className="text-gray-500 text-center text-sm md:text-base">Profile Photo</span>
@@ -155,7 +206,7 @@ const ProfilePage = () => {
                 <h2 className="text-3xl font-bold text-gray-800 break-words max-w-[calc(100%-60px)]">
                   {user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email)}
                 </h2>
-                <Link href="/profile/complete" className="ml-4 flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                <Link href="/profile/edit" className="ml-4 flex items-center text-gray-600 hover:text-gray-900 transition-colors">
                   <LuPencil className="w-5 h-5 mr-1" />
                   <span className="text-sm font-medium">Edit</span>
                 </Link>
@@ -264,18 +315,35 @@ const ProfilePage = () => {
           </p>
         </div>
 
-        {/* Recent Blogs Section - Placeholder */}
-        <div className="mt-12">
-          <h3 className="text-2xl font-bold text-gray-800 mb-6">Recent Blogs</h3>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, index) => ( // Reduced to 3 placeholders for compactness
-              <div key={index} className="bg-gray-100 p-4 rounded-md animate-pulse h-16">
-                <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-300 rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Recent Blogs Section */}
+        <section className="mt-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Recent Blogs</h2>
+          {blogsLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <TailSpin height="50" width="50" color="#4fa94d" ariaLabel="loading-blogs" />
+              <p className="ml-4 text-gray-700">Loading your blogs...</p>
+            </div>
+          ) : userBlogs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {userBlogs.map((blog) => (
+                <BlogItem
+                  key={blog._id}
+                  image={blog.thumbnail}
+                  title={blog.title}
+                  description={blog.description}
+                  link={`/blog/${blog.slug}`} // Link to the full blog post
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 p-6 rounded-md text-center text-gray-600">
+              <p className="mb-4">You haven't created any blog posts yet.</p>
+              <Link href="/create-blog" className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                Create Your First Blog
+              </Link>
+            </div>
+          )}
+        </section>
 
         {/* Social Media Platforms - Placeholder */}
         <div className="mt-12 pt-8 border-t border-gray-200 text-center text-gray-600 text-sm">

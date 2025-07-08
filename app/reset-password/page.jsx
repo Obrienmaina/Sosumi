@@ -1,56 +1,56 @@
+// app/reset-password/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'react-toastify'; // Import toast
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [token, setToken] = useState(null); // State to store the token
+  const [token, setToken] = useState<string | null>(null); // State to store the token
+  const [initialError, setInitialError] = useState<string | null>(null); // For errors during token retrieval
 
   const router = useRouter();
-  const searchParams = useSearchParams(); // Hook to get URL search parameters
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Get the token from the URL query parameters when the component mounts
     const urlToken = searchParams.get('token');
     if (urlToken) {
       setToken(urlToken);
     } else {
-      setError('Password reset token is missing from the URL.');
+      setInitialError('Password reset token is missing from the URL. Please request a new link.');
+      toast.error('Password reset token is missing from the URL. Please request a new link.');
     }
-  }, [searchParams]); // Re-run if searchParams change (though unlikely for a static token link)
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
-    setError('');
 
+    // Client-side validation
     if (!token) {
-      setError('No reset token found. Please request a new password reset link.');
+      toast.error('No reset token found. Please request a new password reset link.');
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      toast.error('Passwords do not match.');
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      toast.error('Password must be at least 6 characters long.');
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/auth/reset-password', { // You'll create this API route
+      const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,16 +64,16 @@ const ResetPasswordPage = () => {
         throw new Error(data.message || 'Failed to reset password.');
       }
 
-      setMessage(data.message || 'Your password has been reset successfully!');
+      toast.success(data.message || 'Your password has been reset successfully!');
       setPassword('');
       setConfirmPassword('');
       // Redirect to sign-in page after a short delay
       setTimeout(() => {
         router.push('/signin');
       }, 3000); // Redirect after 3 seconds
-    } catch (err) {
+    } catch (err: any) {
       console.error('Reset Password Error:', err);
-      setError(err.message || 'An unexpected error occurred during password reset.');
+      toast.error(err.message || 'An unexpected error occurred during password reset.');
     } finally {
       setLoading(false);
     }
@@ -84,18 +84,14 @@ const ResetPasswordPage = () => {
       <div className="bg-white p-8 md:p-12 rounded-lg shadow-xl w-full max-w-md">
         <h1 className="text-4xl font-semibold mb-8 text-gray-800 text-center">Reset Password</h1>
 
-        {message && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{message}</span>
-          </div>
-        )}
-        {error && (
+        {/* Removed direct message/error divs, toast will handle notifications */}
+        {initialError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{error}</span>
+            <span className="block sm:inline">{initialError}</span>
           </div>
         )}
 
-        {!token && !error ? ( // Show loading or message while token is being read
+        {!token && !initialError ? ( // Show loading or message while token is being read
           <p className="text-center text-gray-600">Loading reset token...</p>
         ) : token ? ( // Only show form if token is present
           <form onSubmit={handleSubmit}>
@@ -139,7 +135,7 @@ const ResetPasswordPage = () => {
               {loading ? 'Resetting Password...' : 'Reset Password'}
             </button>
           </form>
-        ) : null} {/* If no token and an error exists, only the error message will show */}
+        ) : null}
 
         <p className="mt-6 text-center text-gray-700 text-base">
           <Link href="/signin" className="text-indigo-600 font-semibold hover:underline">
