@@ -1,24 +1,31 @@
 // Lib/config/db.js
-const mongoose = require('mongoose');
+// This file establishes and manages the MongoDB connection using Mongoose.
+
+import mongoose from 'mongoose'; // Use import for ES Modules
 
 const connectDB = async () => {
-  try {
-    // Add this log for debugging to confirm the value is picked up
-    console.log('DB_CONNECTION_STRING (from db.js):', process.env.DB_CONNECTION_STRING);
+  // Check if already connected or connecting to prevent multiple connections
+  if (mongoose.connections[0].readyState) {
+    console.log('Already connected to MongoDB.');
+    return;
+  }
 
-   
-    await mongoose.connect(
-      process.env.DB_CONNECTION_STRING, 
-      {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      }
-    );
-    console.log('Connected to MongoDB Atlas (sosumi-blog)');
+  try {
+    // Log for debugging (optional, remove in production if sensitive)
+    // console.log('Attempting to connect to DB_CONNECTION_STRING:', process.env.DB_CONNECTION_STRING);
+
+    await mongoose.connect(process.env.DB_CONNECTION_STRING || '', {
+      // useNewUrlParser and useUnifiedTopology are deprecated and no longer needed in Mongoose 6+
+      // If you are using an older Mongoose version, keep them.
+      // For Mongoose 6.x and above, these options are default.
+    });
+    console.log('Successfully connected to MongoDB Atlas.');
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    process.exit(1);
+    // In a serverless environment, throwing an error is often sufficient.
+    // Next.js will catch this and handle the response.
+    throw new Error('Could not connect to the database.');
   }
 };
 
-module.exports = connectDB;
+export default connectDB; // Use export default for ES Modules

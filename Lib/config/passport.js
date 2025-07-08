@@ -1,96 +1,118 @@
+// Lib/config/passport.js
+// This file configures Passport.js strategies for authentication.
+
 import passport from "passport";
-import {Strategy as GoogleStrategy} from 'passport-google-oauth2';
-import { User } from "../models/blogmodel"; 
-import jwt from 'jsonwebtoken'
+import { Strategy as GoogleStrategy } from 'passport-google-oauth2';
+import { User } from "@/Lib/models/blogmodel"; // Use alias if configured
+import jwt from 'jsonwebtoken';
 
+// Define the Google Callback URL from environment variables
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/google/callback';
+
+// Log the callback URL for debugging purposes
+console.log('Passport Google Strategy Callback URL:', GOOGLE_CALLBACK_URL);
+
+// Configure Google OAuth 2.0 Strategy
 passport.use(
-    'google',
+    'google', // Name of the strategy
     new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: 'http://localhost:3000/api/google/callback'
+        clientID: process.env.GOOGLE_CLIENT_ID || '', // Ensure fallback for safety
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '', // Ensure fallback for safety
+        callbackURL: GOOGLE_CALLBACK_URL, // Use the defined environment variable
+        passReqToCallback: true // Allows access to req in callback if needed
+    }, async (request, accessToken, refreshToken, profile, done) => { // Added 'request' parameter
+        try {
+            // Find user by email
+            let user = await User.findOne({ email: profile.email });
 
-}, async (accessToken, refreshToken, profile, done) =>{
-    try{
-        const obj = await User.findOne({ email: profile.email });
-        if(!obj) {
-            // New User - Generate a unique username
-            let baseUsername = profile.displayName ? 
-                                profile.displayName.replace(/\s/g, '').toLowerCase() : 
-                                profile.email.split('@')[0].toLowerCase();
-            
-            let generatedUsername = baseUsername;
-            let counter = 0;
-            let existingUserWithUsername = null;
+            if (!user) {
+                // --- New User: Create a new user profile ---
+                // Generate a unique username based on display name or email
+                let baseUsername = profile.displayName ?
+                                    profile.displayName.replace(/\s/g, '').toLowerCase() :
+                                    profile.email.split('@')[0].toLowerCase();
 
-            // Loop until a truly unique username is found
-            do {
-                existingUserWithUsername = await User.findOne({ username: generatedUsername });
-                if (existingUserWithUsername) {
-                    counter++;
-                    generatedUsername = `${baseUsername}${counter}`;
+                let generatedUsername = baseUsername;
+                let counter = 0;
+                let existingUserWithUsername = null;
+
+                // Loop to ensure username is unique
+                do {
+                    existingUserWithUsername = await User.findOne({ username: generatedUsername });
+                    if (existingUserWithUsername) {
+                        counter++;
+                        generatedUsername = `${baseUsername}${counter}`;
+                    }
+                } while (existingUserWithUsername);
+
+                // Create new user document
+                user = new User({
+                    email: profile.email,
+                    name: profile.displayName,
+                    username: generatedUsername, // Assign the unique username
+                    firstName: profile.name?.givenName || null,
+                    lastName: profile.name?.familyName || null,
+                    profilePictureUrl: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null, // Get profile picture
+                    accessToken, // Store Google's access token
+                    passwordHash: null, // No password hash for Google-registered users
+                    country: null, // To be completed by user
+                    agreedToTerms: false, // To be completed by user
+                    role: 'user', // Default role for new users
+                    tokens: [] // Initialize tokens array
+                });
+                await user.save();
+                console.log("New Google user created:", user.email);
+
+            } else {
+                // --- Existing User: Update profile and generate new token ---
+                console.log("Existing Google user found:", user.email);
+                user.accessToken = accessToken; // Always update access token
+
+                // Update name fields if they've changed on Google's side
+                if (profile.displayName && user.name !== profile.displayName) {
+                    user.name = profile.displayName;
                 }
-            } while (existingUserWithUsername);
+                if (profile.name?.givenName && user.firstName !== profile.name.givenName) {
+                    user.firstName = profile.name.givenName;
+                }
+                if (profile.name?.familyName && user.lastName !== profile.name.familyName) {
+                    user.lastName = profile.name.familyName;
+                }
+                if (profile.photos && profile.photos.length > 0 && user.profilePictureUrl !== profile.photos[0].value) {
+                    user.profilePictureUrl = profile.photos[0].value;
+                }
+                // Do NOT update username here if it's already set (user might have customized it).
+                // If username is null, you could generate one here for older Google users.
+            }
 
-            const newUser = new User({
-                email: profile.email,
-                name: profile.displayName,
-                accessToken,
-                firstName: profile.name.givenName || null,   // Populate from profile if available
-                lastName: profile.name.familyName || null,  // Populate from profile if available
-                country: null,         // Initialize for profile completion (Google profile often doesn't have country directly)
-                agreedToTerms: false,  // Initialize for profile completion
-                passwordHash: null,     // Explicitly set to null for Google-only users
-                username: generatedUsername // <<< --- THIS IS THE KEY ADDITION ---
-            });
-            await newUser.save();
-
+            // Generate JWT for the user
             const token = jwt.sign(
-                { id: newUser._id, created: Date.now().toString() },
-                process.env.JWT_SECRET,
-                { expiresIn: '1d' }
+                { id: user._id, created: Date.now().toString() },
+                process.env.JWT_SECRET || 'supersecretjwtkey', // Use fallback for JWT_SECRET
+                { expiresIn: '1d' } // Token valid for 1 day
             );
 
-            newUser.tokens.push(token);
-            await newUser.save();
-            done(null, newUser, {message: 'Authentication Successful', token});
+            // Add token to user's tokens array if not already present
+            if (!user.tokens.includes(token)) {
+                user.tokens.push(token);
+            }
+            await user.save(); // Save any updates to the user document
 
-        } else {
-            // User exists, sign in
-            // Optional: Update existing user's name/profile fields if they changed in Google
-            obj.accessToken = accessToken; // Ensure access token is updated for existing users
-            if (profile.displayName && obj.name !== profile.displayName) {
-                obj.name = profile.displayName;
-            }
-            if (profile.name && obj.firstName !== profile.name.givenName) {
-                obj.firstName = profile.name.givenName;
-            }
-            if (profile.name && obj.lastName !== profile.name.familyName) {
-                obj.lastName = profile.name.familyName;
-            }
-            // Do NOT update username here for existing users, as it might be manually set.
+            // Call done() with user object and JWT token in info
+            // This token will be used by the /api/auth/google/callback/route.js to set the cookie.
+            done(null, user, { message: 'Authentication Successful', token });
 
-            const token = jwt.sign(
-                { id: obj._id, created: Date.now().toString() },
-                process.env.JWT_SECRET,
-                { expiresIn: '1d' }
-            );
-            // Only add token if it's not already in the array to avoid duplicates
-            if (!obj.tokens.includes(token)) {
-                obj.tokens.push(token);
-            }
-            await obj.save(); // Save any updates made above
-            done(null, obj, {message: 'Authentication Successful', token});
+        } catch (err) {
+            console.error("Passport Google Strategy Error:", err);
+            // Pass the error to the done callback
+            done(err, false, { message: "Internal server error during authentication" });
         }
-    }
-    catch(err) {
-        console.error("Passport Google Strategy Error:", err); 
-        done(err, false, {message: "Internal server error during authentication"});
-    }
-}
-));
+    })
+);
 
-// Passport serialization/deserialization (needed if you use sessions, but good practice to have)
+// Passport serialization/deserialization (only necessary if using session-based authentication)
+// If you are purely stateless with JWTs, these are not strictly needed for Passport's core function,
+// but they don't hurt and can be useful for other Passport integrations.
 passport.serializeUser((user, done) => {
     done(null, user.id);
 });

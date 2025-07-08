@@ -1,46 +1,45 @@
+// app/signup/page.jsx
 'use client';
 
-import React, { useState } from 'react'; // Import useState
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify'; // Import toast for notifications
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // For password confirmation
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(''); // For success messages
 
   const router = useRouter();
 
   // Google Sign-up handler
   const handleGoogleSignup = () => {
-    window.location.href = "/api/google"; // Redirects to your Next.js API route to start Google OAuth
+    // This will redirect to your /api/auth/google route, which then redirects to Google's OAuth
+    window.location.href = "/api/auth/google"; // Corrected path based on your file structure
   };
 
   // Traditional Sign-up handler
   const handleTraditionalSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess(''); // Clear previous messages
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      toast.error('Passwords do not match.');
       setLoading(false);
       return;
     }
 
-    // Basic password strength check (you might want more robust validation)
+    // Basic password strength check
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      toast.error('Password must be at least 6 characters long.');
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/auth/signup', { // You'll create this API route
+      const response = await fetch('/api/auth/signup', { // Your signup API route
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,16 +50,20 @@ const SignupPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Signup failed. Please try again.');
+        toast.error(data.message || 'Signup failed. Please try again.');
+        throw new Error(data.message || 'Signup failed. Please try again.'); // Still throw to enter catch block for console.error
       }
 
-      setSuccess(data.message || 'Account created successfully! You can now sign in.');
-      // Optional: Redirect to sign-in page after successful registration
+      toast.success(data.message || 'Account created successfully! You can now sign in.');
+      // Redirect to sign-in page after successful registration
       router.push('/signin?msg=registered');
 
     } catch (err) {
       console.error('Traditional Sign-up Error:', err);
-      setError(err.message || 'An unexpected error occurred during signup.');
+      // Only show a generic error if the toast wasn't already shown by specific backend message
+      if (!err.message.includes("Signup failed") && !err.message.includes("exists")) { // Avoid double toast for common errors
+          toast.error(err.message || 'An unexpected error occurred during signup.');
+      }
     } finally {
       setLoading(false);
     }
@@ -68,8 +71,8 @@ const SignupPage = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
-      <div className="bg-white p-8 md:p-12 rounded-lg shadow-xl w-full max-w-md"> {/* Adjusted max-width for consistency */}
-        <h1 className="text-4xl font-semibold mb-8 text-gray-800 text-center">Sign Up</h1> {/* Adjusted mb */}
+      <div className="bg-white p-8 md:p-12 rounded-lg shadow-xl w-full max-w-md">
+        <h1 className="text-4xl font-semibold mb-8 text-gray-800 text-center">Sign Up</h1>
 
         {/* Google Signup Button */}
         <button
@@ -96,22 +99,12 @@ const SignupPage = () => {
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
 
-        {/* Error/Success messages */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{success}</span>
-          </div>
-        )}
+        {/* Removed direct error/success divs, toast will handle notifications */}
 
         {/* Traditional Signup Form */}
         <form onSubmit={handleTraditionalSignup}>
           {/* Email */}
-          <div className="mb-4"> {/* Adjusted mb */}
+          <div className="mb-4">
             <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">
               Email
             </label>
@@ -128,7 +121,7 @@ const SignupPage = () => {
           </div>
 
           {/* Password */}
-          <div className="mb-4"> {/* Adjusted mb */}
+          <div className="mb-4">
             <label htmlFor="password" className="block text-lg font-medium text-gray-700 mb-2">
               Password
             </label>
@@ -145,7 +138,7 @@ const SignupPage = () => {
           </div>
 
           {/* Confirm Password */}
-          <div className="mb-6"> {/* Adjusted mb */}
+          <div className="mb-6">
             <label htmlFor="confirmPassword" className="block text-lg font-medium text-gray-700 mb-2">
               Confirm Password
             </label>

@@ -1,19 +1,17 @@
+// app/forgot-password/page.tsx
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-toastify'; // Import toast
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
-    setError('');
 
     try {
       const response = await fetch('/api/auth/forgot-password', {
@@ -27,14 +25,26 @@ const ForgotPasswordPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send reset email.');
+        // Even if response.ok is false, the backend might send a generic message
+        // for security reasons (e.g., if email not found).
+        // Check if the message is the generic success message from backend.
+        if (data.message && data.message.includes("If a matching account is found")) {
+            toast.success(data.message); // Still show as success for generic message
+        } else {
+            toast.error(data.message || 'Failed to send reset email.');
+        }
+        throw new Error(data.message || 'Failed to send reset email.'); // Still throw to enter catch block for console.error
       }
 
-      setMessage(data.message);
+      // If response.ok is true, it's definitely a success
+      toast.success(data.message);
       setEmail(''); // Clear the email field
     } catch (err) {
       console.error('Forgot Password Error:', err);
-      setError(err.message || 'An unexpected error occurred.');
+      // Only show a generic error if the toast wasn't already shown by specific backend message
+      if (!err.message.includes("If a matching account is found")) {
+          toast.error(err.message || 'An unexpected error occurred.');
+      }
     } finally {
       setLoading(false);
     }
@@ -49,16 +59,7 @@ const ForgotPasswordPage = () => {
           Enter your email address below and we'll send you a link to reset your password.
         </p>
 
-        {message && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{message}</span>
-          </div>
-        )}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
+        {/* Removed direct message/error divs, toast will handle notifications */}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-6">

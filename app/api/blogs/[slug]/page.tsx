@@ -3,14 +3,13 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react"; // Removed 'use' hook
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FaTwitter, FaFacebook, FaBookmark, FaRegBookmark, FaHeart, FaRegHeart } from "react-icons/fa"; // Import icons
 import axios from "axios"; // Import axios for API calls
 import { toast } from "react-toastify"; // For notifications
 import { TailSpin } from 'react-loader-spinner'; // Example loading spinner
-import Breadcrumbs from '@/components/Breadcrumbs'; // Assuming you have a Breadcrumbs component
 
 // Define a type for your blog post structure (should match your backend model)
 interface BlogPostType {
@@ -25,21 +24,8 @@ interface BlogPostType {
   author: string;
   authorImg: string;
   likesCount: number; // Assuming backend provides this
-  commentsCount: number; // Denormalized count of comments
-  views: number; // For popularity tracking
-}
-
-// Define a type for comments (matching backend Comment model structure)
-interface CommentType {
-  _id: string;
-  userId: { // Populated user object
-    _id: string;
-    username?: string;
-    name?: string;
-    profilePictureUrl?: string;
-  };
-  content: string;
-  createdAt: string; // Using createdAt from timestamps
+  comments: { _id: string; userId: string; content: string; date: string }[]; // Array of comments
+  // Add other fields as per your BlogPost model
 }
 
 // Define props for the component
@@ -49,150 +35,95 @@ interface FullBlogPageProps {
 
 const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
   const router = useRouter();
-
-  // CORRECTED: Reverted to direct destructuring of params.
-  // The 'use()' hook is not appropriate here for client components in this context.
-  const { slug } = params;
+  const { slug } = params; // Directly access slug from params
 
   const [blog, setBlog] = useState<BlogPostType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // States for interactive features
   const [bookmarked, setBookmarked] = useState(false);
   const [userLiked, setUserLiked] = useState(false); // Track if current user liked
   const [likesCount, setLikesCount] = useState(0); // Actual likes count from backend
-  const [comments, setComments] = useState<CommentType[]>([]);
+  const [comments, setComments] = useState<
+    { _id: string; userId: string; content: string; date: string }[]
+  >([]);
   const [newComment, setNewComment] = useState("");
-
-  // Loading states for actions
   const [commentLoading, setCommentLoading] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
 
-  // --- Fetch Blog Data and Interactive States from Backend ---
+  // --- Fetch Blog Data from Backend ---
   useEffect(() => {
-    const fetchBlogAndInteractiveStates = async () => {
+    const fetchBlog = async () => {
       setLoading(true);
       setError(null);
       try {
-        // 1. Fetch Blog Post Data
-        const blogResponse = await axios.get(`/api/blog/${slug}`);
-        if (blogResponse.data.success && blogResponse.data.blog) {
-          const fetchedBlog: BlogPostType = blogResponse.data.blog;
+        // Assuming your backend API for single blog post is /api/blog?slug=<slug>
+        // Or better, a dedicated route like /api/blogs/[slug]
+        const response = await axios.get(`/api/blog?slug=${slug}`); // Adjust endpoint as per your backend
+        if (response.data.success && response.data.blog) {
+          const fetchedBlog: BlogPostType = response.data.blog;
           setBlog(fetchedBlog);
           setLikesCount(fetchedBlog.likesCount || 0); // Initialize likes from fetched data
+          setComments(fetchedBlog.comments || []); // Initialize comments from fetched data
+
+          // Check bookmark status (still local for now, but can be backend-driven)
+          const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+          setBookmarked(bookmarks.includes(fetchedBlog.slug));
+
+          // Check if user has liked this post (requires backend check)
+          // You'd need another API call here, e.g., /api/blogs/[slug]/likes/status
+          // For now, assume false or implement a simple check if backend provides user's like status
+          // setUserLiked(response.data.userLiked || false);
+
         } else {
-          setError(blogResponse.data.msg || "Blog not found.");
-          toast.error(blogResponse.data.msg || "Failed to load blog.");
-          setLoading(false);
-          return; // Stop execution if blog not found
+          setError(response.data.msg || "Blog not found.");
+          toast.error(response.data.msg || "Failed to load blog.");
         }
-
-        // 2. Fetch User's Like Status
-        try {
-          const likeStatusResponse = await axios.get(`/api/blogs/${slug}/likes`);
-          if (likeStatusResponse.data.success) {
-            setUserLiked(likeStatusResponse.data.userLiked);
-          } else {
-            console.warn("Could not fetch like status:", likeStatusResponse.data.msg);
-          }
-        } catch (likeErr: any) {
-          // 401 means not authenticated, which is fine for public pages.
-          // Other errors might indicate a problem.
-          if (axios.isAxiosError(likeErr) && likeErr.response?.status === 401) {
-            console.error("Error fetching like status: Not authenticated."); // Specific message for 401
-          } else if (axios.isAxiosError(likeErr) && likeErr.response?.status === 404) {
-             console.error("Error fetching like status: API route not found (404)."); // Specific message for 404
-          } else {
-            console.error("Error fetching like status:", likeErr);
-          }
-          setUserLiked(false); // Default to not liked if error or not authenticated
-        }
-
-        // 3. Fetch User's Bookmark Status
-        try {
-          const bookmarkStatusResponse = await axios.get(`/api/blogs/${slug}/bookmark`);
-          if (bookmarkStatusResponse.data.success) {
-            setBookmarked(bookmarkStatusResponse.data.bookmarked);
-          } else {
-            console.warn("Could not fetch bookmark status:", bookmarkStatusResponse.data.msg);
-          }
-        } catch (bookmarkErr: any) {
-          if (axios.isAxiosError(bookmarkErr) && bookmarkErr.response?.status === 404) {
-            console.warn("Bookmark API route not found (404). Ensure app/api/blogs/[slug]/bookmark/route.js exists.");
-          } else if (axios.isAxiosError(bookmarkErr) && bookmarkErr.response?.status !== 401) {
-            console.error("Error fetching bookmark status:", bookmarkErr);
-          }
-          setBookmarked(false); // Default to not bookmarked if error or not authenticated
-        }
-
-        // 4. Fetch Comments
-        try {
-          const commentsResponse = await axios.get(`/api/blogs/${slug}/comments`);
-          if (commentsResponse.data.success) {
-            setComments(commentsResponse.data.comments || []);
-          } else {
-            console.warn("Could not fetch comments:", commentsResponse.data.msg);
-          }
-        } catch (commentsErr: any) {
-          console.error("Error fetching comments:", commentsErr);
-          setComments([]); // Default to empty array if error
-        }
-
-      } catch (err: any) { // Catch any errors from the main blog fetch
-        console.error("Error fetching blog or interactive states:", err);
-        if (axios.isAxiosError(err) && err.response) {
-          setError(err.response.data.msg || "Failed to load blog post. Please try again.");
-          toast.error(err.response.data.msg || "Failed to load blog post. Please try again.");
-        } else {
-          setError("Failed to load blog post. An unexpected error occurred.");
-          toast.error("Failed to load blog post. An unexpected error occurred.");
-        }
+      } catch (err) {
+        console.error("Error fetching blog:", err);
+        setError("Failed to load blog. Please try again.");
+        toast.error("Failed to load blog. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
     if (slug) {
-      fetchBlogAndInteractiveStates();
+      fetchBlog();
     }
   }, [slug]); // Re-run when slug changes
 
-  // --- Handle Bookmark (Now Backend-driven) ---
-  const handleBookmark = async () => {
-    if (!blog || bookmarkLoading) return;
+  // --- Handle Bookmark (Client-side for now, consider backend for sync) ---
+  const handleBookmark = () => {
+    if (!blog) return;
 
-    setBookmarkLoading(true);
-    try {
-      const response = await axios.post(`/api/blogs/${blog.slug}/bookmark`);
-      if (response.data.success) {
-        setBookmarked(response.data.bookmarked); // Update state based on backend response
-        toast.success(response.data.msg);
-      } else {
-        toast.error(response.data.msg || "Failed to update bookmark.");
-      }
-    } catch (error: any) {
-      console.error("Error toggling bookmark:", error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.error("Please sign in to bookmark blogs.");
-        router.push('/signin');
-      } else {
-        toast.error("An error occurred while bookmarking the blog.");
-      }
-    } finally {
-      setBookmarkLoading(false);
+    // For a backend-driven bookmark, you'd make an API call here.
+    // Example: axios.post('/api/blogs/bookmark', { postId: blog._id });
+    // And update state based on API response.
+
+    const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+    let updatedBookmarks;
+    if (bookmarked) {
+      updatedBookmarks = bookmarks.filter((savedSlug: string) => savedSlug !== blog.slug);
+      toast.info("Bookmark removed!");
+    } else {
+      updatedBookmarks = [...bookmarks, blog.slug];
+      toast.success("Blog bookmarked!");
     }
+    localStorage.setItem("bookmarks", JSON.stringify(updatedBookmarks));
+    setBookmarked(!bookmarked);
   };
 
-  // --- Handle Like (Backend-driven) ---
+  // --- Handle Like (Requires Backend API) ---
   const handleLike = async () => {
     if (!blog || likeLoading) return;
 
     setLikeLoading(true);
     try {
-      const response = await axios.post(`/api/blogs/${blog.slug}/likes`);
+      // Assuming your backend API for likes is /api/blogs/[slug]/likes
+      // This API should handle toggling the like status for the authenticated user
+      const response = await axios.post(`/api/blogs/${blog.slug}/likes`); // Adjust endpoint
       if (response.data.success) {
         setLikesCount(response.data.likesCount); // Update count from backend
         setUserLiked(response.data.userLiked); // Update user's like status
@@ -200,29 +131,24 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
       } else {
         toast.error(response.data.msg || "Failed to update like.");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error liking blog:", error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.error("Please sign in to like blogs.");
-        router.push('/signin');
-      } else if (axios.isAxiosError(error) && error.response?.status === 404) {
-        toast.error("Like API route not found. Please ensure app/api/blogs/[slug]/likes/route.ts exists.");
-      } else {
-        toast.error("An error occurred while liking the blog.");
-      }
+      toast.error("An error occurred while liking the blog.");
     } finally {
       setLikeLoading(false);
     }
   };
 
-  // --- Handle Add Comment (Backend-driven) ---
+  // --- Handle Add Comment (Requires Backend API) ---
   const handleAddComment = async () => {
     if (!blog || !newComment.trim() || commentLoading) return;
 
     setCommentLoading(true);
     try {
+      // Assuming your backend API for comments is /api/blogs/[slug]/comments
       const response = await axios.post(`/api/blogs/${blog.slug}/comments`, {
         content: newComment,
+        // userId: (fetched from token on backend)
       });
       if (response.data.success && response.data.comment) {
         setComments((prevComments) => [...prevComments, response.data.comment]); // Add new comment from backend
@@ -231,14 +157,9 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
       } else {
         toast.error(response.data.msg || "Failed to add comment.");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error adding comment:", error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.error("Please sign in to comment.");
-        router.push('/signin');
-      } else {
-        toast.error("An error occurred while adding the comment.");
-      }
+      toast.error("An error occurred while adding the comment.");
     } finally {
       setCommentLoading(false);
     }
@@ -247,11 +168,11 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
   // --- Handle Social Share ---
   const handleShare = (platform: "twitter" | "facebook") => {
     if (!blog) return;
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/blog/${blog.slug}`; // Use env variable or current origin
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/blog/${blog.slug}`; // Use env variable for base URL
     const text = `Check out this blog: ${blog.title}`;
     if (platform === "twitter") {
       window.open(
-        `[https://twitter.com/intent/tweet?text=$](https://twitter.com/intent/tweet?text=$){encodeURIComponent(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(
           text
         )}&url=${encodeURIComponent(url)}`,
         "_blank"
@@ -302,17 +223,9 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
     );
   }
 
-  const breadcrumbPaths = [
-    { label: 'Home', href: '/' },
-    { label: 'Blogs', href: '/blog' },
-    { label: blog.title, href: `/blog/${blog.slug}` },
-  ];
-
   return (
     <div className="p-4 sm:p-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-6 md:p-10 lg:p-12">
-        <Breadcrumbs paths={breadcrumbPaths} />
-
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">{blog.title}</h1>
         <div className="flex items-center gap-4 text-gray-600 mb-6">
             <Image src={blog.authorImg} alt={blog.author} width={40} height={40} className="rounded-full object-cover"/>
@@ -391,24 +304,10 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
             {comments.length > 0 ? (
                 comments.map((comment, index) => (
                     <div key={comment._id || index} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
-                        <div className="flex items-center mb-2">
-                            {comment.userId?.profilePictureUrl && (
-                                <Image
-                                    src={comment.userId.profilePictureUrl}
-                                    alt={comment.userId.username || comment.userId.name || 'User'}
-                                    width={30}
-                                    height={30}
-                                    className="rounded-full object-cover mr-2"
-                                />
-                            )}
-                            <p className="font-medium text-gray-800">
-                                {comment.userId?.username || comment.userId?.name || `User ${comment.userId?._id.substring(0, 8)}...`}
-                            </p>
-                            <span className="text-sm text-gray-500 ml-auto">
-                                {new Date(comment.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                            </span>
-                        </div>
-                        <p className="text-gray-700">{comment.content}</p>
+                        <p className="text-gray-800">{comment.content}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            By User {comment.userId.substring(0, 8)}... on {new Date(comment.date).toLocaleDateString()}
+                        </p>
                     </div>
                 ))
             ) : (
