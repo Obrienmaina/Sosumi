@@ -3,10 +3,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // <--- ADDED THIS IMPORT
-import axios from 'axios'; // For API calls
-import { toast } from 'react-toastify'; // For notifications
-import { TailSpin } from 'react-loader-spinner'; // For loading indicator
+import Link from 'next/link';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { TailSpin } from 'react-loader-spinner';
 
 // Define a type for your user profile data
 interface UserProfileData {
@@ -50,7 +50,8 @@ const EditProfilePage = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get('/api/user'); // Fetch from your user data API
+        // CORRECTED: API call path for fetching user data
+        const response = await axios.get('/api/auth/user'); // Changed from /api/user to /api/auth/user
         if (response.data.user) {
           const user = response.data.user;
           setProfileData({
@@ -127,7 +128,7 @@ const EditProfilePage = () => {
       }
 
       // Use the consolidated profile update API route
-      const res = await fetch('/api/user-profile-update', {
+      const res = await fetch('/api/auth/user-profile-update', { // Corrected API path
         method: 'POST', // Or 'PUT' / 'PATCH' if you change backend method
         body: formData, // Send FormData to the backend
       });
@@ -164,7 +165,7 @@ const EditProfilePage = () => {
       <div className="min-h-screen flex flex-col items-center justify-center">
         <p className="text-red-500 text-lg mb-4">{error}</p>
         <button
-          onClick={() => router.refresh()} // Refresh page to try fetching again
+          onClick={() => router.reload()} // Reload page to try fetching again
           className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
         >
           Retry Loading

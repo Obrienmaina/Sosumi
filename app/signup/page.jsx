@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify'; // Import toast for notifications
+import { toast } from 'react-toastify';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -14,13 +14,11 @@ const SignupPage = () => {
 
   const router = useRouter();
 
-  // Google Sign-up handler
   const handleGoogleSignup = () => {
-    // This will redirect to your /api/auth/google route, which then redirects to Google's OAuth
-    window.location.href = "/api/auth/google"; // Corrected path based on your file structure
+    // CORRECTED: Path to Google OAuth initiation API route
+    window.location.href = "/api/google"; // Changed from /api/google to /api/auth/google
   };
 
-  // Traditional Sign-up handler
   const handleTraditionalSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -31,7 +29,6 @@ const SignupPage = () => {
       return;
     }
 
-    // Basic password strength check
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters long.');
       setLoading(false);
@@ -39,7 +36,7 @@ const SignupPage = () => {
     }
 
     try {
-      const response = await fetch('/api/auth/signup', { // Your signup API route
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,17 +48,15 @@ const SignupPage = () => {
 
       if (!response.ok) {
         toast.error(data.message || 'Signup failed. Please try again.');
-        throw new Error(data.message || 'Signup failed. Please try again.'); // Still throw to enter catch block for console.error
+        throw new Error(data.message || 'Signup failed. Please try again.');
       }
 
       toast.success(data.message || 'Account created successfully! You can now sign in.');
-      // Redirect to sign-in page after successful registration
       router.push('/signin?msg=registered');
 
     } catch (err) {
       console.error('Traditional Sign-up Error:', err);
-      // Only show a generic error if the toast wasn't already shown by specific backend message
-      if (!err.message.includes("Signup failed") && !err.message.includes("exists")) { // Avoid double toast for common errors
+      if (!err.message.includes("Signup failed") && !err.message.includes("exists")) {
           toast.error(err.message || 'An unexpected error occurred during signup.');
       }
     } finally {
@@ -74,14 +69,12 @@ const SignupPage = () => {
       <div className="bg-white p-8 md:p-12 rounded-lg shadow-xl w-full max-w-md">
         <h1 className="text-4xl font-semibold mb-8 text-gray-800 text-center">Sign Up</h1>
 
-        {/* Google Signup Button */}
         <button
           type="button"
           onClick={handleGoogleSignup}
           className="w-full flex items-center justify-center gap-2 mb-6 px-6 py-3 border border-gray-300 rounded-md bg-white hover:bg-gray-100 text-gray-700 font-medium text-lg shadow-sm transition-colors"
         >
           <svg className="w-6 h-6" viewBox="0 0 48 48">
-            {/* Google SVG paths */}
             <g>
               <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.6 33.1 29.8 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c2.7 0 5.2.9 7.2 2.5l6.4-6.4C34.1 5.1 29.3 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.2-4z"/>
               <path fill="#34A853" d="M6.3 14.7l7 5.1C15.2 17.1 19.2 14 24 14c2.7 0 5.2.9 7.2 2.5l6.4-6.4C34.1 5.1 29.3 3 24 3c-7.2 0-13.3 4.1-16.7 10.1z"/>
@@ -92,18 +85,13 @@ const SignupPage = () => {
           Sign up with Google
         </button>
 
-        {/* Divider */}
         <div className="relative flex items-center justify-center my-6">
           <div className="flex-grow border-t border-gray-300"></div>
           <span className="flex-shrink mx-4 text-gray-500 text-sm">Or sign up with email</span>
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
 
-        {/* Removed direct error/success divs, toast will handle notifications */}
-
-        {/* Traditional Signup Form */}
         <form onSubmit={handleTraditionalSignup}>
-          {/* Email */}
           <div className="mb-4">
             <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">
               Email
@@ -120,7 +108,6 @@ const SignupPage = () => {
             />
           </div>
 
-          {/* Password */}
           <div className="mb-4">
             <label htmlFor="password" className="block text-lg font-medium text-gray-700 mb-2">
               Password
@@ -137,7 +124,6 @@ const SignupPage = () => {
             />
           </div>
 
-          {/* Confirm Password */}
           <div className="mb-6">
             <label htmlFor="confirmPassword" className="block text-lg font-medium text-gray-700 mb-2">
               Confirm Password
@@ -154,7 +140,6 @@ const SignupPage = () => {
             />
           </div>
 
-          {/* Sign Up Button */}
           <button
             type="submit"
             className="w-full px-6 py-3 bg-[#5936BB] text-white font-medium rounded-full hover:bg-[#4a2bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5936BB] text-lg transition-colors"
@@ -164,7 +149,6 @@ const SignupPage = () => {
           </button>
         </form>
 
-        {/* Existing user link */}
         <p className="mt-8 text-center text-gray-700 text-base">
           Already have a Sosumi account?{" "}
           <Link href="/signin" className="text-indigo-600 font-semibold hover:underline">

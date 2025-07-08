@@ -23,10 +23,10 @@ const HomePage = () => {
       <section className="text-center mt-16">
         <p className="text-xl text-gray-700">Start exploring our articles or sign up to join our community!</p>
         <div className="mt-6 flex justify-center gap-4">
-          <Link href="/blog" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+          <Link href="/blog" className="px-6 py-3 bg-[#5936BB] text-white rounded-full hover:bg-[#4a2bb2] transition-colors font-medium">
             Browse Blogs
           </Link>
-          <Link href="/signup" className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium">
+          <Link href="/signup" className="px-6 py-3 border border-[#5936BB] text-[#5936BB] rounded-full hover:bg-[#5936BB] hover:text-white transition-colors font-medium">
             Join Us
           </Link>
         </div>
