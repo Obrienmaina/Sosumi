@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useEffect, useState, use } from "react"; // Import 'use' hook
+import React, { useEffect, useState, use } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FaTwitter, FaFacebook, FaBookmark, FaRegBookmark, FaHeart, FaRegHeart } from "react-icons/fa"; // Import icons
@@ -12,6 +12,7 @@ import { toast } from "react-toastify"; // For notifications
 import { TailSpin } from 'react-loader-spinner'; // Example loading spinner
 import Breadcrumbs from '@/components/Breadcrumbs'; // Assuming you have a Breadcrumbs component
 import Link from 'next/link'; // Import Link for navigation to edit page
+import Swal from 'sweetalert2'; // Import SweetAlert2 for confirmation dialogs
 
 // Define a type for your blog post structure (should match your backend model)
 interface BlogPostType {
@@ -70,6 +71,7 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
   const [commentLoading, setCommentLoading] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false); // For delete action
 
   // State for current user's ID and role for authorization checks
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -283,8 +285,50 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
     }
   };
 
-  // --- Check if current user can edit this blog ---
-  const canEdit = blog && currentUserId && (blog.authorId === currentUserId || currentUserRole === 'admin');
+  // --- Handle Delete Blog Post ---
+  const handleDeleteBlog = async () => {
+    if (!blog || deleteLoading) return;
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setDeleteLoading(true);
+        try {
+          // Use the slug for deletion as per api-blog-slug-route (PUT/DELETE)
+          const response = await axios.delete(`/api/blog/${blog.slug}`);
+          if (response.data.success) {
+            toast.success(response.data.msg || "Blog post deleted successfully!");
+            router.push('/blog'); // Redirect to blog list after deletion
+          } else {
+            toast.error(response.data.msg || "Failed to delete blog post.");
+          }
+        } catch (error: any) {
+          console.error("Error deleting blog post:", error);
+          if (axios.isAxiosError(error) && error.response?.status === 401) {
+            toast.error("You are not authorized to delete this blog.");
+            router.push('/signin');
+          } else if (axios.isAxiosError(error) && error.response?.status === 403) {
+            toast.error("You do not have permission to delete this blog.");
+          } else {
+            toast.error("An error occurred while deleting the blog post.");
+          }
+        } finally {
+          setDeleteLoading(false);
+        }
+      }
+    });
+  };
+
+
+  // --- Check if current user can edit/delete this blog ---
+  const canModify = blog && currentUserId && (blog.authorId === currentUserId || currentUserRole === 'admin');
 
 
   // --- Loading and Error States ---
@@ -343,15 +387,28 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
             <p><strong>Published on:</strong> {new Date(blog.date).toLocaleDateString()}</p>
         </div>
 
-        {/* Edit Blog Button (Conditional Rendering) */}
-        {canEdit && (
-          <div className="mb-6 text-right">
+        {/* Edit and Delete Blog Buttons (Conditional Rendering) */}
+        {canModify && (
+          <div className="mb-6 flex justify-end gap-3">
             <Link
               href={`/edit-blog/${blog.slug}`}
               className="px-5 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium"
             >
               Edit Blog
             </Link>
+            <button
+              onClick={handleDeleteBlog}
+              disabled={deleteLoading}
+              className={`px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium ${
+                deleteLoading ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
+              {deleteLoading ? (
+                <TailSpin height="20" width="20" color="#fff" ariaLabel="deleting" />
+              ) : (
+                'Delete Blog'
+              )}
+            </button>
           </div>
         )}
 
