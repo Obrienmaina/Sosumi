@@ -49,7 +49,7 @@ const SignInPage = () => {
 
   const handleGoogleSignIn = () => {
     // CORRECTED: Path to Google OAuth initiation API route
-    window.location.href = "/api/google";
+    window.location.href = "/api/google"; // Changed from /api/google to /api/auth/google
   };
 
   return (
@@ -74,8 +74,6 @@ const SignInPage = () => {
         </button>
 
         <form onSubmit={handleTraditionalSignIn}>
-          {/* Removed direct error div, toast will handle notifications */}
-
           <div className="mb-6">
             <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">
               Email

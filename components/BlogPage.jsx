@@ -60,22 +60,6 @@ const BlogPage = ({ params }) => {
           Discover insights, opinions, and stories from our latest blog entries. Whether you’re here to learn, explore, or simply get inspired — there’s something for everyone.
         </p>
 
-        {/* Buttons below the text */}
-        <div className="flex justify-center gap-6">
-          <Link
-            href="/signin"
-            className="flex items-center gap-2 font-medium py-2 px-6 border bg-[#5936BB] text-white hover:bg-[#8764E8] hover:text-white rounded-full"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/signup"
-            className="flex items-center gap-2 font-medium py-2 px-6 bg-[#5936BB] text-white hover:bg-[#8764E8] rounded-full"
-          >
-            Sign up
-          </Link>
-        </div>
-
     <div className="p-8">
       {/* Search Bar */}
       <div className="mb-8">
