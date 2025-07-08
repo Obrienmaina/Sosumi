@@ -49,7 +49,7 @@ export async function POST(request) { // Consider PATCH for partial updates
     return NextResponse.json({ message: 'Bio updated successfully!', user: { bio: user.bio } }, { status: 200 });
 
   } catch (error) {
-    console.error('API /api/user-bio-data error:', error);
+    console.error('API /api/auth/user-bio-data error:', error);
     return NextResponse.json({ message: 'Internal server error during bio update.' }, { status: 500 });
   }
 }
