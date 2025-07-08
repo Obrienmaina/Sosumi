@@ -19,7 +19,8 @@ const Header = () => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await axios.get('/api/user'); // Fetch user data
+        // CORRECTED: API call path for fetching user data
+        const response = await axios.get('/api/auth/user'); // Changed from /api/user to /api/auth/user
         if (response.data.user) {
           setIsLoggedIn(true);
           setUserName(response.data.user.firstName || response.data.user.email); // Use first name or email
