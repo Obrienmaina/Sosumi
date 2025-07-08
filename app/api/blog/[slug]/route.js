@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import connectDB from '@/Lib/config/db'; // Adjust path as needed
 import { BlogPost, User } from '@/Lib/models/blogmodel'; // Adjust path as needed
 import { v2 as cloudinary } from 'cloudinary'; // For image deletion (if updating/deleting images)
+import slugify from 'slugify'; // For generating slugs
 
 // Configure Cloudinary (ensure these environment variables are set)
 cloudinary.config({
@@ -20,7 +21,7 @@ export const dynamic = 'force-dynamic';
 
 // Helper function to authenticate the user (reused from previous routes)
 async function authenticateRequest(request) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies(); // Await cookies()
   const tokenCookie = cookieStore.get('token');
   const token = tokenCookie?.value;
 
@@ -46,7 +47,6 @@ export async function GET(request, context) { // Renamed second argument to 'con
   await connectDB(); // Ensure database connection
 
   // CORRECTED: Explicitly await context.params to resolve the warning.
-  // This forces Next.js to treat the params object in an async-aware manner.
   const { slug } = await context.params;
 
   try {
@@ -71,6 +71,127 @@ export async function GET(request, context) { // Renamed second argument to 'con
     return NextResponse.json({ success: false, msg: 'Internal Server Error', error: error.message }, { status: 500 });
   }
 }
+
+// --- PUT Request Handler (Update Single Blog Post) ---
+export async function PUT(request, context) {
+    await connectDB();
+
+    const authResult = await authenticateRequest(request);
+    if (!authResult.authenticated) {
+        return NextResponse.json({ success: false, msg: authResult.message }, { status: authResult.status });
+    }
+    const requestingUser = authResult.user;
+
+    const { slug: currentSlug } = await context.params; // Get the slug from URL params
+
+    try {
+        // 1. Find the existing blog post
+        const blogPost = await BlogPost.findOne({ slug: currentSlug });
+        if (!blogPost) {
+            return NextResponse.json({ success: false, msg: 'Blog post not found.' }, { status: 404 });
+        }
+
+        // 2. Authorization Check: Only the author or an admin can update the blog
+        if (blogPost.authorId.toString() !== requestingUser._id.toString() && requestingUser.role !== 'admin') {
+            return NextResponse.json({ success: false, msg: "Unauthorized to update this blog post." }, { status: 403 });
+        }
+
+        // 3. Parse FormData for updates (text fields + potential image)
+        const formData = await request.formData();
+
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const content = formData.get('content');
+        const category = formData.get('category');
+        const isPublished = formData.get('isPublished') === 'true'; // Convert string to boolean
+        const thumbnailFile = formData.get('thumbnail'); // The new thumbnail file (if any)
+
+        // 4. Validate required fields
+        if (!title || !description || !content || !category) {
+            return NextResponse.json({ success: false, msg: "Missing required blog fields (title, description, content, category)." }, { status: 400 });
+        }
+
+        // 5. Generate new slug if title changed
+        let newSlug = blogPost.slug; // Default to old slug
+        if (title !== blogPost.title) {
+            newSlug = slugify(title, { lower: true, strict: true, locale: 'en' });
+            // Check if the new slug already exists for another blog post
+            const existingBlogWithNewSlug = await BlogPost.findOne({ slug: newSlug });
+            if (existingBlogWithNewSlug && existingBlogWithNewSlug._id.toString() !== blogPost._id.toString()) {
+                return NextResponse.json({ success: false, msg: "A blog with this title already exists (slug conflict)." }, { status: 409 });
+            }
+        }
+
+        // 6. Handle thumbnail update
+        if (thumbnailFile && thumbnailFile instanceof Blob && thumbnailFile.size > 0) {
+            // Delete old image from Cloudinary if it exists
+            if (blogPost.thumbnail) {
+                const publicIdMatch = blogPost.thumbnail.match(/\/upload\/(?:v\d+\/)?([^\/]+)\./);
+                if (publicIdMatch && publicIdMatch[1]) {
+                    const publicId = publicIdMatch[1].replace(/^sosumi_blog_thumbnails\//, '');
+                    await cloudinary.uploader.destroy(`sosumi_blog_thumbnails/${publicId}`);
+                }
+            }
+
+            // Upload new image to Cloudinary
+            const arrayBuffer = await thumbnailFile.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            const uploadResult = await new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream(
+                    {
+                        folder: 'sosumi_blog_thumbnails', // Consistent folder for blog thumbnails
+                        resource_type: 'image',
+                    },
+                    (error, result) => {
+                        if (error) {
+                            console.error('Cloudinary thumbnail upload error:', error);
+                            return reject(error);
+                        }
+                        resolve(result);
+                    }
+                ).end(buffer);
+            });
+
+            if (!uploadResult || !uploadResult.secure_url) {
+                return NextResponse.json({ success: false, msg: 'Failed to upload new thumbnail image.' }, { status: 500 });
+            }
+            blogPost.thumbnail = uploadResult.secure_url; // Update thumbnail URL
+        } else if (thumbnailFile === 'null' || thumbnailFile === '') { // Frontend explicitly sent 'null' or empty string to remove thumbnail
+            if (blogPost.thumbnail) {
+                const publicIdMatch = blogPost.thumbnail.match(/\/upload\/(?:v\d+\/)?([^\/]+)\./);
+                if (publicIdMatch && publicIdMatch[1]) {
+                    const publicId = publicIdMatch[1].replace(/^sosumi_blog_thumbnails\//, '');
+                    await cloudinary.uploader.destroy(`sosumi_blog_thumbnails/${publicId}`);
+                }
+            }
+            blogPost.thumbnail = null; // Set thumbnail to null
+        }
+        // If thumbnailFile is null/undefined and not 'null' string, it means no change to thumbnail
+
+        // 7. Update blog post fields
+        blogPost.title = title;
+        blogPost.slug = newSlug; // Update slug if title changed
+        blogPost.description = description;
+        blogPost.content = content;
+        blogPost.category = category;
+        blogPost.isPublished = isPublished;
+
+        await blogPost.save(); // Save the updated blog post
+
+        return NextResponse.json({ success: true, msg: "Blog post updated successfully!", blog: blogPost }, { status: 200 });
+
+    } catch (error) {
+        console.error('Error updating blog post:', error);
+        // Handle Mongoose validation errors
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(err => err.message);
+            return NextResponse.json({ success: false, msg: messages.join(', ') }, { status: 400 });
+        }
+        return NextResponse.json({ success: false, msg: 'Internal Server Error', error: error.message }, { status: 500 });
+    }
+}
+
 
 // --- DELETE Request Handler (Delete Single Blog Post) ---
 export async function DELETE(request, context) { // Renamed second argument to 'context'
@@ -127,5 +248,3 @@ export async function DELETE(request, context) { // Renamed second argument to '
     return NextResponse.json({ success: false, msg: 'Internal Server Error', error: error.message }, { status: 500 });
   }
 }
-
-// You can add a PUT/PATCH handler here for updating blog posts by slug as well.

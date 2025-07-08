@@ -1,7 +1,7 @@
 // app/create-blog/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; // Import useEffect
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -13,20 +13,54 @@ const CreateBlogPage = () => {
     title: '',
     description: '',
     category: '',
-    content: '', // For the main blog body
+    content: '', // Add content property to state
     isPublished: true, // Default to published, or false for draft
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const contentEditableRef = useRef<HTMLDivElement>(null); // Ref for contentEditable div
+
+  // Set initial content for contentEditable div when component mounts or content changes
+  useEffect(() => {
+    if (contentEditableRef.current && formData.content !== contentEditableRef.current.innerHTML) {
+      contentEditableRef.current.innerHTML = formData.content;
+    }
+  }, [formData.content]); // Dependency on formData.content
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === 'checkbox' && 'checked' in e.target
         ? (e.target as HTMLInputElement).checked
         : value,
     }));
+  };
+
+  const handleContentInput = () => {
+    // Update formData.content with the innerHTML of the contentEditable div
+    if (contentEditableRef.current) {
+      setFormData((prevData) => ({
+        ...prevData,
+        content: contentEditableRef.current?.innerHTML || '',
+      }));
+    }
+  };
+
+  const handleContentKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Handle Ctrl+B (or Cmd+B on Mac) for bolding
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault(); // Prevent browser's default bold action if any
+
+      // Ensure the contentEditable div is focused before executing command
+      if (contentEditableRef.current) {
+        contentEditableRef.current.focus();
+        document.execCommand('bold', false, null); // Use null for consistency
+      }
+    }
+    // Note: 'Enter' key for new paragraphs is usually handled automatically by contentEditable
+    // The browser's default behavior for 'Enter' in contentEditable is to insert a <p> or <div>,
+    // which should be handled by the 'prose' class for display.
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,17 +80,24 @@ const CreateBlogPage = () => {
       return;
     }
 
+    // Check contentEditable div's actual content, not just trimmed state, as it might contain HTML like <p><br></p>
+    const currentContent = contentEditableRef.current?.innerHTML.trim();
+    if (!currentContent || currentContent === '<br>') { // Check for empty or just a line break
+      toast.error('Blog content cannot be empty.');
+      setLoading(false);
+      return;
+    }
+
     const data = new FormData();
     data.append('title', formData.title);
     data.append('description', formData.description);
     data.append('category', formData.category);
-    data.append('content', formData.content);
+    data.append('content', formData.content); // Use the HTML content from state
     data.append('isPublished', String(formData.isPublished)); // Convert boolean to string
     data.append('thumbnail', thumbnailFile); // Append the thumbnail file
 
     try {
       // Assuming your backend API for adding blogs is /api/blog/create
-      // You will need to create this API route if it doesn't exist.
       const response = await axios.post('/api/blog/create', data, {
         headers: {
           'Content-Type': 'multipart/form-data', // Important for file uploads
@@ -142,20 +183,34 @@ const CreateBlogPage = () => {
             </select>
           </div>
 
+          {/* Replaced textarea with contentEditable div for rich text */}
           <div>
             <label htmlFor="content" className="block text-lg font-medium text-gray-700 mb-2">
               Blog Content
             </label>
-            <textarea
-              id="content"
-              name="content"
-              value={formData.content}
-              onChange={handleChange}
-              rows={10}
-              className="mt-1 block w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg"
-              placeholder="Write your blog content here..."
-              required
-            ></textarea>
+            <div className="relative">
+              <div
+                id="content"
+                ref={contentEditableRef}
+                contentEditable="true"
+                onInput={handleContentInput}
+                onKeyDown={handleContentKeyDown}
+                className="mt-1 block w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg min-h-[200px] prose max-w-none"
+                style={{ whiteSpace: 'pre-wrap' }}
+                aria-label="Write your blog content here..."
+              ></div>
+              {(!formData.content || formData.content === '<br>') && (
+                <span
+                  className="pointer-events-none absolute left-4 top-3 text-gray-400 select-none"
+                  style={{ userSelect: 'none' }}
+                >
+                  Write your blog content here...
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              You can type, hit Enter for new paragraphs, and use Ctrl+B (or Cmd+B) for bold text.
+            </p>
           </div>
 
           <div>

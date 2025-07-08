@@ -8,31 +8,74 @@ import { LuPencil } from 'react-icons/lu';
 import axios from 'axios'; // For fetching user data
 import { toast } from 'react-toastify'; // For notifications
 import { TailSpin } from 'react-loader-spinner'; // For loading indicator
+import BlogItem from '@/components/BlogItem'; // Assuming you have a BlogItem component
 
-const ProfileCompletePage = () => { // Renamed for clarity
+interface BlogPostType {
+  _id: string;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string;
+  date: string;
+  category: string;
+  author: string;
+  authorImg: string;
+  likesCount: number;
+  commentsCount: number;
+  views: number;
+}
+
+const ProfileCompletePage = () => {
   const router = useRouter();
   const [user, setUser] = useState<any>(null); // State to store user data
+  const [userBlogs, setUserBlogs] = useState<BlogPostType[]>([]); // State for user's blogs
   const [loading, setLoading] = useState(true);
+  const [blogsLoading, setBlogsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserProfileAndBlogs = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch user data from your API (e.g., /api/user)
-        const response = await axios.get('/api/user'); // Corrected path
-        if (response.data.user) {
-          setUser(response.data.user);
+        // Fetch user data
+        const userResponse = await axios.get('/api/user');
+        if (userResponse.data.user) {
+          setUser(userResponse.data.user);
         } else {
           toast.error("Failed to fetch user profile.");
           setError("Failed to fetch user profile.");
+          setLoading(false);
+          return;
         }
-      } catch (err: any) { // This is valid TypeScript syntax
+
+        // Fetch user's blogs
+        setBlogsLoading(true);
+        try {
+          const blogsResponse = await axios.get('/api/user/blogs'); // New API route
+          if (blogsResponse.data.success) {
+            setUserBlogs(blogsResponse.data.blogs);
+          } else {
+            console.warn("Could not fetch user blogs:", blogsResponse.data.msg);
+            setUserBlogs([]); // Ensure it's an empty array on failure
+          }
+        } catch (blogsErr: any) {
+          console.error("Error fetching user blogs:", blogsErr);
+          if (axios.isAxiosError(blogsErr) && blogsErr.response?.status === 401) {
+            // This is handled by the main user fetch, but good to note.
+          } else {
+            toast.error("An error occurred while fetching your blogs.");
+          }
+          setUserBlogs([]); // Ensure it's an empty array on error
+        } finally {
+          setBlogsLoading(false);
+        }
+
+      } catch (err: any) {
         console.error("Error fetching user profile:", err);
         if (axios.isAxiosError(err) && err.response && err.response.status === 401) {
           toast.error("You are not authenticated. Please sign in.");
-          router.push('/signin'); // Redirect to sign-in if not authenticated
+          router.push('/signin');
         } else {
           toast.error(err.response?.data?.message || "An error occurred while fetching profile.");
           setError(err.response?.data?.message || "An error occurred while fetching profile.");
@@ -42,7 +85,7 @@ const ProfileCompletePage = () => { // Renamed for clarity
       }
     };
 
-    fetchUserProfile();
+    fetchUserProfileAndBlogs();
   }, [router]);
 
   if (loading) {
@@ -83,7 +126,7 @@ const ProfileCompletePage = () => { // Renamed for clarity
       )}
 
       {/* Profile Actions */}
-      <div className="flex flex-wrap gap-4 items-center">
+      <div className="flex flex-wrap gap-4 items-center mb-12">
         {/* Edit Profile Button */}
         <Link
           href="/profile/edit"
@@ -94,7 +137,7 @@ const ProfileCompletePage = () => { // Renamed for clarity
         </Link>
 
         {/* Admin Page Button (conditionally rendered) */}
-        {user && user.role === 'admin' && ( // Assuming 'admin' is the role for administrators
+        {user && user.role === 'admin' && (
           <button
             onClick={() => router.push("/admin")}
             className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
@@ -103,6 +146,36 @@ const ProfileCompletePage = () => { // Renamed for clarity
           </button>
         )}
       </div>
+
+      {/* Recent Blogs Section */}
+      <section className="mt-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Recent Blogs</h2>
+        {blogsLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <TailSpin height="50" width="50" color="#4fa94d" ariaLabel="loading-blogs" />
+            <p className="ml-4 text-gray-700">Loading your blogs...</p>
+          </div>
+        ) : userBlogs.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {userBlogs.map((blog) => (
+              <BlogItem
+                key={blog._id}
+                image={blog.thumbnail}
+                title={blog.title}
+                description={blog.description}
+                link={`/blog/${blog.slug}`} // Link to the full blog post
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 p-6 rounded-md text-center text-gray-600">
+            <p className="mb-4">You haven't created any blog posts yet.</p>
+            <Link href="/create-blog" className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              Create Your First Blog
+            </Link>
+          </div>
+        )}
+      </section>
     </div>
   );
 };

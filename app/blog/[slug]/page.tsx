@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react"; // Removed 'use' hook
+import React, { useEffect, useState, use } from "react"; // Import 'use' hook
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FaTwitter, FaFacebook, FaBookmark, FaRegBookmark, FaHeart, FaRegHeart } from "react-icons/fa"; // Import icons
@@ -11,6 +11,7 @@ import axios from "axios"; // Import axios for API calls
 import { toast } from "react-toastify"; // For notifications
 import { TailSpin } from 'react-loader-spinner'; // Example loading spinner
 import Breadcrumbs from '@/components/Breadcrumbs'; // Assuming you have a Breadcrumbs component
+import Link from 'next/link'; // Import Link for navigation to edit page
 
 // Define a type for your blog post structure (should match your backend model)
 interface BlogPostType {
@@ -23,6 +24,7 @@ interface BlogPostType {
   date: string;
   category: string;
   author: string;
+  authorId: string; // Add authorId to check for authorization
   authorImg: string;
   likesCount: number; // Assuming backend provides this
   commentsCount: number; // Denormalized count of comments
@@ -50,9 +52,8 @@ interface FullBlogPageProps {
 const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
   const router = useRouter();
 
-  // CORRECTED: Reverted to direct destructuring of params.
-  // The 'use()' hook is not appropriate here for client components in this context.
-  const { slug } = params;
+  // CORRECTED: Use React.use() to unwrap params as suggested by Next.js warning.
+  const { slug } = use(params);
 
   const [blog, setBlog] = useState<BlogPostType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,10 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
   const [commentLoading, setCommentLoading] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
+  // State for current user's ID and role for authorization checks
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
 
   // --- Fetch Blog Data and Interactive States from Backend ---
@@ -90,7 +95,21 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
           return; // Stop execution if blog not found
         }
 
-        // 2. Fetch User's Like Status
+        // 2. Fetch Current User's Data for Authorization
+        try {
+          const userResponse = await axios.get('/api/auth/user');
+          if (userResponse.data.user) {
+            setCurrentUserId(userResponse.data.user._id);
+            setCurrentUserRole(userResponse.data.user.role);
+          }
+        } catch (userErr: any) {
+          // It's okay if user is not logged in, just won't have auth for actions
+          console.warn("User not authenticated or error fetching user data:", userErr);
+          setCurrentUserId(null);
+          setCurrentUserRole(null);
+        }
+
+        // 3. Fetch User's Like Status
         try {
           const likeStatusResponse = await axios.get(`/api/blogs/${slug}/likes`);
           if (likeStatusResponse.data.success) {
@@ -111,7 +130,7 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
           setUserLiked(false); // Default to not liked if error or not authenticated
         }
 
-        // 3. Fetch User's Bookmark Status
+        // 4. Fetch User's Bookmark Status
         try {
           const bookmarkStatusResponse = await axios.get(`/api/blogs/${slug}/bookmark`);
           if (bookmarkStatusResponse.data.success) {
@@ -128,7 +147,7 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
           setBookmarked(false); // Default to not bookmarked if error or not authenticated
         }
 
-        // 4. Fetch Comments
+        // 5. Fetch Comments
         try {
           const commentsResponse = await axios.get(`/api/blogs/${slug}/comments`);
           if (commentsResponse.data.success) {
@@ -251,7 +270,7 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
     const text = `Check out this blog: ${blog.title}`;
     if (platform === "twitter") {
       window.open(
-        `[https://twitter.com/intent/tweet?text=$](https://twitter.com/intent/tweet?text=$){encodeURIComponent(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(
           text
         )}&url=${encodeURIComponent(url)}`,
         "_blank"
@@ -263,6 +282,10 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
       );
     }
   };
+
+  // --- Check if current user can edit this blog ---
+  const canEdit = blog && currentUserId && (blog.authorId === currentUserId || currentUserRole === 'admin');
+
 
   // --- Loading and Error States ---
   if (loading) {
@@ -319,6 +342,18 @@ const FullBlogPage: React.FC<FullBlogPageProps> = ({ params }) => {
             <p><strong>Author:</strong> {blog.author}</p>
             <p><strong>Published on:</strong> {new Date(blog.date).toLocaleDateString()}</p>
         </div>
+
+        {/* Edit Blog Button (Conditional Rendering) */}
+        {canEdit && (
+          <div className="mb-6 text-right">
+            <Link
+              href={`/edit-blog/${blog.slug}`}
+              className="px-5 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium"
+            >
+              Edit Blog
+            </Link>
+          </div>
+        )}
 
         <Image
           src={blog.thumbnail} // Use 'thumbnail' as per backend model
