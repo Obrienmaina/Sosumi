@@ -9,6 +9,14 @@ import { useRouter } from 'next/navigation';
 import { Editor, EditorState } from 'draft-js';
 import Breadcrumbs from "@/components/Breadcrumbs";
 
+const generateSlug = (title) => {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s]/g, "") // Remove special characters
+    .replace(/\s+/g, "-"); // Replace spaces with hyphens
+};
+
 const AddBlogPage = () => {
   const router = useRouter();
   const breadcrumbPaths = [

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { FaTwitter, FaFacebook } from "react-icons/fa"; // Import icons from react-icons
 
 export const blog_data = [
   {
@@ -21,7 +22,9 @@ export const blog_data = [
     socials: {
       twitter: "#",
       linkedin: "#",
+      likes: 0, // Initialize likes property
     },
+    comments: [], // Add comments property
   },
   {
     id: 2,
@@ -31,37 +34,37 @@ export const blog_data = [
     content: `
       <p>🧠 “10 Simple Habits to Improve Your Mental Health”</p>
       <p>Discover ten practical habits to boost mental wellbeing and reduce stress—real strategies that fit into everyday life.</p>
-      <p>⸻</p>
+      <p></p>
       <p>1. Start Your Day Without Your Phone</p>
       <p>Avoid diving into social media or emails the moment you wake up. Instead, stretch, drink water, or take 5 minutes to breathe. Set your own tone for the day.</p>
-      <p>⸻</p>
+      <p></p>
       <p>2. Practice Gratitude</p>
       <p>Write down three things you’re thankful for every evening. Studies show that gratitude can significantly improve mood and resilience.</p>
-      <p>⸻</p>
+      <p></p>
       <p>3. Get Outside Daily</p>
       <p>Nature exposure—even for 10 minutes—has been linked to lower anxiety and improved concentration. A short walk can do wonders.</p>
-      <p>⸻</p>
+      <p></p>
       <p>4. Sleep Like It Matters (Because It Does)</p>
       <p>Create a consistent sleep routine. Wind down with no screens before bed, keep your room cool and dark, and aim for 7–9 hours.</p>
-      <p>⸻</p>
+      <p></p>
       <p>5. Move Your Body</p>
       <p>You don’t need a gym membership. Stretching, dancing, or walking all release endorphins that help balance stress hormones.</p>
-      <p>⸻</p>
+      <p></p>
       <p>6. Limit Doomscrolling</p>
       <p>Set app limits or “focus time” on your phone. Mindless scrolling adds background stress and disrupts sleep patterns.</p>
-      <p>⸻</p>
+      <p></p>
       <p>7. Talk It Out</p>
       <p>Whether with a friend, journal, or therapist, expressing how you feel reduces internal pressure and helps you process emotions.</p>
-      <p>⸻</p>
+      <p></p>
       <p>8. Create Tech-Free Zones</p>
       <p>Designate parts of your day or home where phones and screens are off-limits—like the dinner table or your bedroom.</p>
-      <p>⸻</p>
+      <p></p>
       <p>9. Practice Mindfulness (Without the Woo-Woo)</p>
       <p>Mindfulness just means paying attention. Try 5 minutes of focused breathing or simply eating a meal without distractions.</p>
-      <p>⸻</p>
+      <p></p>
       <p>10. Say “No” Without Guilt</p>
       <p>Overcommitting is a fast track to burnout. Respect your limits. Boundaries are a form of self-respect—not selfishness.</p>
-      <p>⸻</p>
+      <p></p>
       <p>“Mental health is not a destination, but a daily practice. Small actions, repeated often, create lasting change.”</p>
     `,
     image: "/images/photo2.png",
@@ -139,16 +142,55 @@ export const blog_data = [
 const FullBlogPage = ({ params }: { params: Promise<{ slug: string }> }) => {
   const router = useRouter();
   const [blog, setBlog] = useState<typeof blog_data[0] | null>(null);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [likes, setLikes] = useState(0); // State for likes
+  const [comments, setComments] = useState<string[]>([]); // State for comments
+  const [newComment, setNewComment] = useState(""); // State for new comment input
 
   useEffect(() => {
     const fetchParams = async () => {
       const resolvedParams = await params; // Unwrap the params Promise
       const foundBlog = blog_data.find((b) => b.slug === resolvedParams.slug);
       setBlog(foundBlog || null);
+
+      // Check if the blog is already bookmarked
+      const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+      setBookmarked(bookmarks.includes(resolvedParams.slug));
+
+      // Initialize likes and comments (mock data for now)
+      setLikes(foundBlog?.socials.likes || 0);
+      setComments(foundBlog?.comments || []);
     };
 
     fetchParams();
   }, [params]);
+
+  const handleBookmark = () => {
+    const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+    if (bookmarked) {
+      // Remove bookmark
+      const updatedBookmarks = bookmarks.filter((savedSlug: string) => savedSlug !== blog?.slug);
+      localStorage.setItem("bookmarks", JSON.stringify(updatedBookmarks));
+      setBookmarked(false);
+    } else {
+      // Add bookmark
+      localStorage.setItem("bookmarks", JSON.stringify([...bookmarks, blog?.slug]));
+      setBookmarked(true);
+    }
+  };
+
+  const handleLike = () => {
+    setLikes((prevLikes) => prevLikes + 1);
+    // Optionally, send a request to the backend to persist likes
+  };
+
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+      setComments((prevComments) => [...prevComments, newComment]);
+      setNewComment("");
+      // Optionally, send a request to the backend to persist the comment
+    }
+  };
 
   // Handle case where blog is not found
   if (!blog) {
@@ -206,25 +248,68 @@ const FullBlogPage = ({ params }: { params: Promise<{ slug: string }> }) => {
           dangerouslySetInnerHTML={{ __html: blog.content }}
         ></div>
 
+        {/* Like Button */}
+        <button
+          onClick={handleLike}
+          className="mt-8 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+        >
+          Like ({likes})
+        </button>
+
+        {/* Bookmark Button */}
+        <button
+          onClick={handleBookmark}
+          className={`mt-8 px-4 py-2 rounded-md ${
+            bookmarked ? "bg-purple-500 text-white" : "bg-orange-500 text-white"
+          } hover:bg-purple-600 transition-colors`}
+        >
+          {bookmarked ? "Bookmarked" : "Bookmark"}
+        </button>
+
         {/* Social Media Sharing Buttons */}
         <div className="mt-8 flex gap-4">
           <button
             onClick={() => handleShare("twitter")}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
-            Share on Twitter
+            <FaTwitter className="w-5 h-5" /> Twitter
           </button>
           <button
             onClick={() => handleShare("facebook")}
-            className="px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
           >
-            Share on Facebook
+            <FaFacebook className="w-5 h-5" /> Facebook
+          </button>
+        </div>
+
+        {/* Comments Section */}
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold mb-2">Comments</h3>
+          <ul className="space-y-2">
+            {comments.map((comment, index) => (
+              <li key={index} className="bg-gray-100 p-2 rounded-md">
+                {comment}
+              </li>
+            ))}
+          </ul>
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md mt-4"
+            rows={3}
+            placeholder="Add a comment..."
+          ></textarea>
+          <button
+            onClick={handleAddComment}
+            className="mt-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
+          >
+            Add Comment
           </button>
         </div>
 
         <button
           onClick={() => router.push("/blog")}
-          className="mt-8 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+          className="mt-8 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
         >
           Back to Blogs
         </button>

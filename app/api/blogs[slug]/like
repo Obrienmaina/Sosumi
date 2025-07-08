@@ -1,0 +1,30 @@
+import connectDB from '../../../Lib/config/db'; // Adjust path as needed
+import mongoose from 'mongoose';
+
+const BlogSchema = new mongoose.Schema({
+  slug: { type: String, required: true },
+  likes: { type: Number, default: 0 },
+});
+
+export const Blog = mongoose.model('Blog', BlogSchema);
+
+export async function POST(request, { params }) {
+  const { slug } = params;
+
+  try {
+    await connectDB();
+
+    const blog = await Blog.findOne({ slug });
+    if (!blog) {
+      return new Response(JSON.stringify({ message: 'Blog not found' }), { status: 404 });
+    }
+
+    blog.likes += 1; // Increment likes
+    await blog.save();
+
+    return new Response(JSON.stringify({ likes: blog.likes }), { status: 200 });
+  } catch (error) {
+    console.error('Error updating likes:', error);
+    return new Response(JSON.stringify({ message: 'Failed to update likes' }), { status: 500 });
+  }
+}

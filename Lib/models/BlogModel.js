@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // 1. BlogPost Schema
 const blogPostSchema = new mongoose.Schema({
@@ -84,6 +84,16 @@ const userSchema = new mongoose.Schema({
   interests: { type: String, default: '' },
 });
 
+// 6. Notification Schema
+const notificationSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'BlogPost', required: true },
+  type: { type: String, enum: ['like', 'comment'], required: true }, // Type of notification
+  message: { type: String, required: true }, // Notification message
+  createdAt: { type: Date, default: Date.now },
+  read: { type: Boolean, default: false }, // Whether the notification has been read
+});
+
 // Create models (using the safe compilation pattern)
 const BlogPost = mongoose.models.BlogPost || mongoose.model('BlogPost', blogPostSchema);
 const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema);
@@ -91,6 +101,7 @@ const Bookmark = mongoose.models.Bookmark || mongoose.model('Bookmark', bookmark
 const Like = mongoose.models.Like || mongoose.model('Like', likeSchema);
 const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
 const User = mongoose.models.User || mongoose.model('User', userSchema);
+const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
 
 // Export models
 module.exports = {
@@ -100,4 +111,5 @@ module.exports = {
   Like,
   Category,
   User,
+  Notification, // Export Notification model
 };

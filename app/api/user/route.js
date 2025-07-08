@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import connectDB from '../../../Lib/config/db';
+import mongoose from 'mongoose';
 import { User } from '../../../Lib/models/blogmodel';
 
-export async function GET(request) {
+// Removed unused userSchema declaration
+
+export async function GET() {
   await connectDB();
 
   try {
@@ -18,7 +21,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token.value, process.env.JWT_SECRET);
-    } catch (err) {
+    } catch {
       return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 });
     }
 
@@ -33,3 +36,5 @@ export async function GET(request) {
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
+
+export { BlogPost, Comment, Bookmark, User };
