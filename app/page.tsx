@@ -4,11 +4,24 @@
 
 import React from 'react';
 import Link from 'next/link'; // <--- ADDED THIS IMPORT
+import Image from 'next/image';
 
 const HomePage = () => {
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Welcome to Sosumi Blog!</h1>
+      <h1 className="text-3xl sm:text-5xl font-medium flex items-center justify-center gap-2">
+          Welcome to
+          <Link href="/">
+            <Image
+              src="/images/sosumi.png" // Ensure this path is correct in your public folder
+              alt="Sosumi Logo"
+              width={250} // Increased width for a bigger logo
+              height={90} // Increased height for a bigger logo
+              className="inline-block cursor-pointer"
+              priority // Prioritize loading the logo
+            />
+          </Link>
+        </h1>
       <p className="text-lg text-center text-gray-600 mb-12">
         Discover insightful articles on technology, lifestyle, finance, and more.
       </p>
